@@ -72,7 +72,7 @@
 </head>
 <body>
 
-    <textarea id="text-editor" placeholder="Start typing..."></textarea>
+    <textarea id="text-editor" placeholder="✍🏻 start typing..."></textarea>
     <div>
         <button id="download-btn">💾 download as .txt</button>
         <label for="upload-file">📤 upload .txt file</label>
@@ -99,7 +99,7 @@
 
         // Download content as a .txt file with a custom filename
         downloadBtn.addEventListener('click', () => {
-            const filename = prompt("Enter the filename:", "text-editor-content.txt");
+            const filename = prompt("↳ enter the filename:", "file");
             if (filename) {
                 const blob = new Blob([textEditor.value], { type: 'text/plain' });
                 const a = document.createElement('a');

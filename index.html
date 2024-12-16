@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> text editor </title>
+    <style>
+        body {
+            font-family: monospace, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #111;
+        }
+
+        textarea {
+            width: 90%;
+            max-width: 800px;
+            max-height: 400px;
+            min-height: 300px;
+            height: 300px;
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: vertical;
+            background-color: #222;
+            color: white;
+        }
+
+        button {
+        	font-family: monospace, sans-serif;
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #222;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #333;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        label {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #222;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        label:hover {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <textarea id="text-editor" placeholder="Start typing..."></textarea>
+    <div>
+        <button id="download-btn">Download as .txt</button>
+        <label for="upload-file">Upload .txt file</label>
+        <input type="file" id="upload-file" accept=".txt">
+    </div>
+
+    <script>
+        const textEditor = document.getElementById('text-editor');
+        const downloadBtn = document.getElementById('download-btn');
+        const uploadFile = document.getElementById('upload-file');
+
+        // Load saved content from localStorage
+        window.onload = () => {
+            const savedText = localStorage.getItem('text-editor-content');
+            if (savedText) {
+                textEditor.value = savedText;
+            }
+        };
+
+        // Save content to localStorage automatically
+        textEditor.addEventListener('input', () => {
+            localStorage.setItem('text-editor-content', textEditor.value);
+        });
+
+        // Download content as a .txt file with a custom filename
+        downloadBtn.addEventListener('click', () => {
+            const filename = prompt("Enter the filename:", "text-editor-content.txt");
+            if (filename) {
+                const blob = new Blob([textEditor.value], { type: 'text/plain' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                a.click();
+            }
+        });
+
+        // Upload and read content from a .txt file
+        uploadFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    textEditor.value = e.target.result;
+                    localStorage.setItem('text-editor-content', textEditor.value);
+                };
+                reader.readAsText(file);
+            }
+        });
+    </script>
+
+</body>
+</html>

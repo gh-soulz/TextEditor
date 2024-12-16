@@ -99,7 +99,7 @@
 
         // Download content as a .txt file with a custom filename
         downloadBtn.addEventListener('click', () => {
-            const filename = prompt("↳ enter the filename:", "");
+            const filename = prompt("↳ enter the filename:", "text");
             if (filename) {
                 const blob = new Blob([textEditor.value], { type: 'text/plain' });
                 const a = document.createElement('a');

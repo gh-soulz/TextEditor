@@ -26,24 +26,30 @@
             margin-bottom: 15px;
             padding: 10px;
             font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            border: none;
+            border-radius: 7px;
             resize: vertical;
             background-color: #222;
             color: white;
+            transition: background 0.2s ease;
+            outline: none;
         }
-
+		
+        textarea:hover {
+        	background-color: #333;
+		}
         button {
-        	font-family: monospace, sans-serif;
+            font-family: monospace, sans-serif;
             margin: 5px;
             padding: 10px 20px;
             font-size: 16px;
             color: #fff;
             background-color: #222;
             border: none;
-            border-radius: 5px;
+            border-radius: 7px;
             cursor: pointer;
             transition: background 0.2s ease;
+            user-select: none;
         }
 
         button:hover {
@@ -60,41 +66,74 @@
             font-size: 16px;
             color: #fff;
             background-color: #222;
-            border-radius: 5px;
+            border-radius: 7px;
             cursor: pointer;
             transition: background 0.2s ease;
+            user-select: none;
         }
 
         label:hover {
             background-color: #333;
         }
+
+        select {
+            font-family: monospace, sans-serif;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #222;
+            color: white;
+            border: none;
+            border-radius: 7px;
+            margin-bottom: 10px;
+            transition: background 0.2s ease;
+            user-select: none;
+            outline: none;
+        }
+        select:hover {
+        	background-color: #333;
+        }
     </style>
 </head>
 <body>
+
+    <select id="file-selector">
+        <option value="">↳ select a file...</option>
+    </select>
 
     <textarea id="text-editor" placeholder="✍🏻 start typing..."></textarea>
     <div>
         <button id="download-btn">💾 download as .txt</button>
         <label for="upload-file">📤 upload .txt file</label>
         <input type="file" id="upload-file" accept=".txt">
+        <button id="new-file-btn">➕ new .txt file</button>
+        <button id="delete-file-btn" style="display: none;">🗑️ delete file</button>
     </div>
 
     <script>
         const textEditor = document.getElementById('text-editor');
         const downloadBtn = document.getElementById('download-btn');
         const uploadFile = document.getElementById('upload-file');
+        const newFileBtn = document.getElementById('new-file-btn');
+        const deleteFileBtn = document.getElementById('delete-file-btn');
+        const fileSelector = document.getElementById('file-selector');
+        
+        let fileData = {};
 
-        // Load saved content from localStorage
+        // Load saved content from localStorage on page load
         window.onload = () => {
             const savedText = localStorage.getItem('text-editor-content');
             if (savedText) {
                 textEditor.value = savedText;
+                fileData["default.txt"] = savedText;
+                fileSelector.innerHTML += `<option value="default.txt">default.txt</option>`;
             }
         };
 
         // Save content to localStorage automatically
         textEditor.addEventListener('input', () => {
-            localStorage.setItem('text-editor-content', textEditor.value);
+            const currentFile = fileSelector.value || 'default.txt';
+            fileData[currentFile] = textEditor.value;
+            localStorage.setItem(currentFile, textEditor.value);
         });
 
         // Download content as a .txt file with a custom filename
@@ -116,9 +155,64 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     textEditor.value = e.target.result;
-                    localStorage.setItem('text-editor-content', textEditor.value);
+                    const filename = file.name;
+                    fileData[filename] = e.target.result;
+                    fileSelector.innerHTML += `<option value="${filename}">${filename}</option>`;
+                    fileSelector.value = filename;
+                    toggleDeleteButton(true);
                 };
                 reader.readAsText(file);
+            }
+        });
+
+        // Create a new .txt file
+        newFileBtn.addEventListener('click', () => {
+            const filename = prompt("↳ enter the new filename:", "newfile.txt");
+            if (filename) {
+                fileData[filename] = "";
+                fileSelector.innerHTML += `<option value="${filename}">${filename}</option>`;
+                fileSelector.value = filename;
+                textEditor.value = "";
+                toggleDeleteButton(true);
+            }
+        });
+
+        // Switch between files using the dropdown
+        fileSelector.addEventListener('change', (event) => {
+            const filename = event.target.value;
+            if (filename) {
+                textEditor.value = fileData[filename] || '';
+                toggleDeleteButton(filename !== 'default.txt');
+            }
+        });
+
+        // Toggle the visibility of the delete button
+        function toggleDeleteButton(show) {
+            deleteFileBtn.style.display = show ? 'inline-block' : 'none';
+        }
+
+        // Delete the selected file
+        deleteFileBtn.addEventListener('click', () => {
+            const currentFile = fileSelector.value;
+            if (currentFile && currentFile !== 'default.txt') {
+                if (confirm(`⚠️ are you sure you want to delete ${currentFile}?`)) {
+                    // Remove from fileData and localStorage
+                    delete fileData[currentFile];
+                    localStorage.removeItem(currentFile);
+
+                    // Remove from dropdown
+                    const optionToRemove = fileSelector.querySelector(`option[value="${currentFile}"]`);
+                    if (optionToRemove) {
+                        optionToRemove.remove();
+                    }
+
+                    // Set editor to the default file if available
+                    const newFile = fileSelector.value = 'default.txt';
+                    textEditor.value = fileData[newFile] || '';
+
+                    // Hide delete button
+                    toggleDeleteButton(false);
+                }
             }
         });
     </script>

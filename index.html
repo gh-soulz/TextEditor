@@ -167,15 +167,23 @@
 
         // Create a new .txt file
         newFileBtn.addEventListener('click', () => {
-            const filename = prompt("↳ enter the new filename:", "newfile.txt");
-            if (filename) {
-                fileData[filename] = "";
-                fileSelector.innerHTML += `<option value="${filename}">${filename}</option>`;
-                fileSelector.value = filename;
-                textEditor.value = "";
-                toggleDeleteButton(true);
-            }
-        });
+    const filename = prompt("↳ enter the new filename:", "newfile.txt");
+    
+    if (filename) {
+        // Check if the filename already exists in fileData
+        if (fileData.hasOwnProperty(filename)) {
+            alert("⚠️ a file with this name already exists. please choose a different name.");
+            return; // Stop further execution
+        } else {
+            // Create the new file and add it to fileData and the selector
+            fileData[filename] = "";
+            fileSelector.innerHTML += `<option value="${filename}">${filename}</option>`;
+            fileSelector.value = filename;
+            textEditor.value = "";
+            toggleDeleteButton(true);
+        }
+    }
+});
 
         // Switch between files using the dropdown
         fileSelector.addEventListener('change', (event) => {

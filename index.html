@@ -58,19 +58,22 @@
     button:hover, select:hover {
       background-color: #333;
     }
+    #fileSelector {
+      margin-bottom: 20px; /* Add spacing below the select dropdown */
+    }
   </style>
 </head>
 <body>
   <h1>📝 text editor</h1>
+  <select id="fileSelector">
+    <option value="" disabled selected>select file</option>
+  </select>
   <textarea id="editor" placeholder="✍🏻 start typing..."></textarea>
   <div class="controls">
     <button id="download">💾 save as .txt</button>
     <button id="upload">📤 upload .txt</button>
     <button id="newFile">➕ new file</button>
     <button id="deleteFile">🗑️ delete file</button>
-    <select id="fileSelector">
-      <option value="" disabled selected>select file</option>
-    </select>
   </div>
 
   <input type="file" id="fileInput" accept=".txt" style="display: none;" />

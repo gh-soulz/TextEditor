@@ -80,113 +80,160 @@
   <input type="file" id="fileInput" accept=".txt" style="display: none;" />
 
   <script>
-    const editor = document.getElementById('editor');
-    const downloadButton = document.getElementById('download');
-    const uploadButton = document.getElementById('upload');
-    const newFileButton = document.getElementById('newFile');
-    const deleteFileButton = document.getElementById('deleteFile');
-    const fileSelector = document.getElementById('fileSelector');
-    const fileInput = document.getElementById('fileInput');
+  const editor = document.getElementById('editor');
+  const downloadButton = document.getElementById('download');
+  const uploadButton = document.getElementById('upload');
+  const newFileButton = document.getElementById('newFile');
+  const deleteFileButton = document.getElementById('deleteFile');
+  const fileSelector = document.getElementById('fileSelector');
+  const fileInput = document.getElementById('fileInput');
 
-    let files = JSON.parse(localStorage.getItem('textEditorFiles')) || {};
-    let currentFile = null;
+  let db;
+  let currentFile = null;
 
-    function saveToLocalStorage() {
-      if (currentFile) {
-        files[currentFile] = editor.value;
-        localStorage.setItem('textEditorFiles', JSON.stringify(files));
+  // Open IndexedDB
+  function openDatabase() {
+    const request = indexedDB.open('TextEditorDB', 1);
+
+    request.onupgradeneeded = (event) => {
+      db = event.target.result;
+      if (!db.objectStoreNames.contains('files')) {
+        db.createObjectStore('files', { keyPath: 'name' });
       }
-    }
+    };
 
-    function loadFileList() {
+    request.onsuccess = (event) => {
+      db = event.target.result;
+      loadFileList();
+    };
+
+    request.onerror = (event) => {
+      console.error('Database error:', event.target.error);
+    };
+  }
+
+  // Save file to IndexedDB
+  function saveFileToDB(fileName, content) {
+    const transaction = db.transaction('files', 'readwrite');
+    const store = transaction.objectStore('files');
+    store.put({ name: fileName, content: content });
+  }
+
+  // Delete file from IndexedDB
+  function deleteFileFromDB(fileName) {
+    const transaction = db.transaction('files', 'readwrite');
+    const store = transaction.objectStore('files');
+    store.delete(fileName);
+  }
+
+  // Load file list from IndexedDB
+  function loadFileList() {
+    const transaction = db.transaction('files', 'readonly');
+    const store = transaction.objectStore('files');
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const files = request.result;
       fileSelector.innerHTML = '<option value="" disabled selected>select file</option>';
-      Object.keys(files).forEach(fileName => {
+      files.forEach((file) => {
         const option = document.createElement('option');
-        option.value = fileName;
-        option.textContent = fileName;
+        option.value = file.name;
+        option.textContent = file.name;
         fileSelector.appendChild(option);
       });
-    }
+    };
+  }
 
-    function createNewFile() {
-      const fileName = prompt('↳ enter new file name:');
-      if (!fileName || files[fileName]) {
-        alert('⚠️ invalid name or file already exists.');
-        return;
-      }
-      files[fileName] = '';
-      currentFile = fileName;
-      editor.value = '';
-      saveToLocalStorage();
-      loadFileList();
-      fileSelector.value = fileName;
-    }
+  // Load file content from IndexedDB
+  function loadFileContent(fileName) {
+    const transaction = db.transaction('files', 'readonly');
+    const store = transaction.objectStore('files');
+    const request = store.get(fileName);
 
-    function deleteFile() {
-      if (currentFile && confirm(`⚠️ are you sure you want to delete ${currentFile}?`)) {
-        delete files[currentFile];
-        localStorage.setItem('textEditorFiles', JSON.stringify(files));
-        currentFile = null;
-        editor.value = '';
-        loadFileList();
-      }
-    }
-
-    function downloadFile() {
-      if (!currentFile) {
-        alert('⚠️ no file is currently open.');
-        return;
-      }
-      const blob = new Blob([editor.value], { type: 'text/plain' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = currentFile + '.txt';
-      a.click();
-    }
-
-    function uploadFile() {
-      fileInput.click();
-    }
-
-    fileInput.addEventListener('change', event => {
-      const file = event.target.files[0];
+    request.onsuccess = () => {
+      const file = request.result;
       if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const content = reader.result;
-          const fileName = prompt('↳ enter name for the uploaded file:');
-          if (!fileName || files[fileName]) {
-            alert('⚠️ invalid name or file already exists.');
-            return;
-          }
-          files[fileName] = content;
-          currentFile = fileName;
-          editor.value = content;
-          saveToLocalStorage();
-          loadFileList();
-          fileSelector.value = fileName;
-        };
-        reader.readAsText(file);
-      }
-    });
-
-    fileSelector.addEventListener('change', event => {
-      const fileName = event.target.value;
-      if (fileName) {
+        editor.value = file.content;
         currentFile = fileName;
-        editor.value = files[fileName];
       }
-    });
+    };
+  }
 
-    editor.addEventListener('input', saveToLocalStorage);
+  // Event Listeners
+  editor.addEventListener('input', () => {
+    if (currentFile) {
+      saveFileToDB(currentFile, editor.value);
+    }
+  });
 
-    downloadButton.addEventListener('click', downloadFile);
-    uploadButton.addEventListener('click', uploadFile);
-    newFileButton.addEventListener('click', createNewFile);
-    deleteFileButton.addEventListener('click', deleteFile);
-
-    // Initialize the editor
+  newFileButton.addEventListener('click', () => {
+    const fileName = prompt('↳ enter new file name:');
+    if (!fileName) {
+      alert('⚠️ invalid name.');
+      return;
+    }
+    saveFileToDB(fileName, '');
+    currentFile = fileName;
+    editor.value = '';
     loadFileList();
-  </script>
+    fileSelector.value = fileName;
+  });
+
+  deleteFileButton.addEventListener('click', () => {
+    if (currentFile && confirm(`⚠️ are you sure you want to delete ${currentFile}?`)) {
+      deleteFileFromDB(currentFile);
+      currentFile = null;
+      editor.value = '';
+      loadFileList();
+    }
+  });
+
+  downloadButton.addEventListener('click', () => {
+    if (!currentFile) {
+      alert('⚠️ no file is currently open.');
+      return;
+    }
+    const blob = new Blob([editor.value], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = currentFile + '.txt';
+    a.click();
+  });
+
+  uploadButton.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const content = reader.result;
+        const fileName = prompt('↳ enter name for the uploaded file:');
+        if (!fileName) {
+          alert('⚠️ invalid name.');
+          return;
+        }
+        saveFileToDB(fileName, content);
+        currentFile = fileName;
+        editor.value = content;
+        loadFileList();
+        fileSelector.value = fileName;
+      };
+      reader.readAsText(file);
+    }
+  });
+
+  fileSelector.addEventListener('change', (event) => {
+    const fileName = event.target.value;
+    if (fileName) {
+      loadFileContent(fileName);
+    }
+  });
+
+  // Initialize
+  openDatabase();
+</script>
 </body>
 </html>

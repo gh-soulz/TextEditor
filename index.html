@@ -36,7 +36,7 @@
       color: white;
     }
     textarea:hover {
-    	background-color: #333;
+      background-color: #333;
     }
     .controls {
       font-family: monospace, sans-serif;
@@ -59,16 +59,24 @@
     button:hover, select:hover {
       background-color: #333;
     }
+    .file-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
     #fileSelector {
-      margin-bottom: 20px; /* Add spacing below the select dropdown */
+      margin-bottom: 0;
     }
   </style>
 </head>
 <body>
   <h1>📝 text editor</h1>
-  <select id="fileSelector">
-    <option value="" disabled selected>select file</option>
-  </select>
+  <div class="file-controls">
+    <select id="fileSelector">
+      <option value="" disabled selected>select file</option>
+    </select>
+    <button id="renameFile">✏️</button>
+  </div>
   <textarea id="editor" placeholder="✍🏻 start typing..."></textarea>
   <div class="controls">
     <button id="download">💾 save as .txt</button>
@@ -85,6 +93,7 @@
   const uploadButton = document.getElementById('upload');
   const newFileButton = document.getElementById('newFile');
   const deleteFileButton = document.getElementById('deleteFile');
+  const renameFileButton = document.getElementById('renameFile');
   const fileSelector = document.getElementById('fileSelector');
   const fileInput = document.getElementById('fileInput');
 
@@ -117,6 +126,34 @@
     const transaction = db.transaction('files', 'readwrite');
     const store = transaction.objectStore('files');
     store.put({ name: fileName, content: content });
+  }
+
+  // Rename file in IndexedDB
+  function renameFileInDB(oldName, newName) {
+    const transaction = db.transaction('files', 'readwrite');
+    const store = transaction.objectStore('files');
+    const getRequest = store.get(oldName);
+
+    getRequest.onsuccess = () => {
+      const file = getRequest.result;
+      if (file) {
+        // Check if the new name already exists
+        const checkRequest = store.get(newName);
+        checkRequest.onsuccess = () => {
+          const existingFile = checkRequest.result;
+          if (existingFile) {
+            alert('⚠️ a file with this name already exists. please choose a different name');
+          } else {
+            store.delete(oldName);
+            file.name = newName;
+            store.put(file);
+            if (currentFile === oldName) currentFile = newName;
+            loadFileList();
+            fileSelector.value = newName;
+          }
+        };
+      }
+    };
   }
 
   // Delete file from IndexedDB
@@ -166,17 +203,43 @@
     }
   });
 
+  renameFileButton.addEventListener('click', () => {
+    if (!currentFile) {
+      alert('⚠️ no file is currently selected');
+      return;
+    }
+    const newName = prompt(`↳ enter new name for the file "${currentFile}":`);
+    if (!newName) {
+      alert('⚠️ invalid name');
+      return;
+    }
+    renameFileInDB(currentFile, newName);
+  });
+
   newFileButton.addEventListener('click', () => {
     const fileName = prompt('↳ enter new file name:');
     if (!fileName) {
-      alert('⚠️ invalid name.');
+      alert('⚠️ invalid name');
       return;
     }
-    saveFileToDB(fileName, '');
-    currentFile = fileName;
-    editor.value = '';
-    loadFileList();
-    fileSelector.value = fileName;
+
+    // Check if file name already exists
+    const transaction = db.transaction('files', 'readonly');
+    const store = transaction.objectStore('files');
+    const request = store.get(fileName);
+
+    request.onsuccess = () => {
+      const existingFile = request.result;
+      if (existingFile) {
+        alert('⚠️ a file with this name already exists. please choose a different name');
+        return;
+      }
+      saveFileToDB(fileName, '');
+      currentFile = fileName;
+      editor.value = '';
+      loadFileList();
+      fileSelector.value = fileName;
+    };
   });
 
   deleteFileButton.addEventListener('click', () => {
@@ -215,11 +278,24 @@
           alert('⚠️ invalid name.');
           return;
         }
-        saveFileToDB(fileName, content);
-        currentFile = fileName;
-        editor.value = content;
-        loadFileList();
-        fileSelector.value = fileName;
+
+        // Check if file name already exists
+        const transaction = db.transaction('files', 'readonly');
+        const store = transaction.objectStore('files');
+        const request = store.get(fileName);
+
+        request.onsuccess = () => {
+          const existingFile = request.result;
+          if (existingFile) {
+            alert('⚠️ a file with this name already exists. please choose a different name.');
+            return;
+          }
+          saveFileToDB(fileName, content);
+          currentFile = fileName;
+          editor.value = content;
+          loadFileList();
+          fileSelector.value = fileName;
+        };
       };
       reader.readAsText(file);
     }

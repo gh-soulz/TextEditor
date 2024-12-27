@@ -247,7 +247,7 @@
   });
 
   deleteFileButton.addEventListener('click', () => {
-    if (currentFile && confirm(`⚠️ are you sure you want to delete ${currentFile}?`)) {
+    if (currentFile && confirm(`⚠️ are you sure you want to delete '${currentFile}'?`)) {
       deleteFileFromDB(currentFile);
       currentFile = null;
       editor.value = '';

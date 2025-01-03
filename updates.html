@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>text editor update log</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #111;
+            font-family: monospace, sans-serif;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background-color: #222;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: white;
+        }
+
+        .scroll-box {
+            height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #333;
+        }
+
+        .scroll-box p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">text editor update log</div>
+        <div class="scroll-box">
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam fermentum orci vel nisl vehicula varius.</p>
+            <p>Sed id libero sed augue aliquam scelerisque. Curabitur auctor velit non risus cursus, nec vulputate sem dignissim.</p>
+            <p>Praesent eu libero aliquet, vulputate nunc non, tincidunt risus. Etiam non mi vel mi mollis laoreet.</p>
+            <p>Fusce dapibus, lacus eget laoreet facilisis, ligula orci gravida dolor, ac lacinia sapien lectus ac ipsum.</p>
+            <p>Morbi nec nisl nec eros tempus convallis non vel est. Pellentesque blandit posuere lacus a tincidunt.</p>
+        </div>
+    </div>
+</body>
+</html>

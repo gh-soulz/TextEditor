@@ -3,24 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📝 text editor</title>
+  <title>📝 text editor v2</title>
   <link rel="icon" type="image/x-icon" href="image.png">
   <style>
     body {
-    font-family: monospace, sans-serif;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: center; /* Center content vertically */
-    align-items: center;    /* Center content horizontally */
-    min-height: 100vh;      /* Full height of the viewport */
-    padding: 20px;
-    background-color: #111;
-    color: white;
-    user-select: none;
-  }
+      font-family: monospace, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      background-color: #111;
+      color: white;
+      user-select: none;
+    }
     textarea {
       width: 100%;
       max-width: 650px;
@@ -44,7 +44,6 @@
     .controls {
       font-family: monospace, sans-serif;
       display: flex;
-      flex-wrap: wrap;
       gap: 10px;
     }
     button, select {
@@ -57,23 +56,76 @@
       color: white;
       border-radius: 7px;
       transition: background 0.2s ease;
-      user-select: none;
+      cursor: pointer;
     }
     button:hover, select:hover {
       background-color: #333;
     }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-content {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+    .modal-content input {
+      font-family: monospace, sans-serif;
+      width: 94%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: none;
+      outline: none;
+      border-radius: 5px;
+      background-color: #333;
+      color: white;
+    }
+    .modal-content button {
+      margin: 0 5px;
+      font-family: monospace;
+    }
     .file-controls {
+  	  font-family: monospace, sans-serif;
       display: flex;
       gap: 10px;
-      margin-bottom: 20px;
+      align-items: center;  /* Ensures vertical alignment of the items */
+      padding: 10px 0;      /* Adds equal padding above and below the file controls */
     }
-    #fileSelector {
-      margin-bottom: 0;
+
+	select, button {
+  	  font-family: monospace, sans-serif;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      outline: none;
+      background-color: #222;
+      color: white;
+      border-radius: 7px;
+      transition: background 0.2s ease;
+      cursor: pointer;
+    }
+
+	select:hover, button:hover {
+      background-color: #333;
     }
   </style>
 </head>
 <body>
-  <h1>📝 text editor</h1>
+  <h1>📝 text editor v2</h1>
   <div class="file-controls">
     <select id="fileSelector">
       <option value="" disabled selected>select file</option>
@@ -88,231 +140,230 @@
     <button id="deleteFile">🗑️</button>
   </div>
 
-  <input type="file" id="fileInput" accept=".txt" style="display: none;" />
+  <!-- Custom Modal -->
+  <div id="customModal" class="modal">
+    <div class="modal-content">
+      <p id="modalMessage"></p>
+      <input id="modalInput" type="text" style="display: none;" />
+      <div>
+        <button id="modalConfirm">✅ confirm</button>
+        <button id="modalCancel">❌ cancel</button>
+      </div>
+    </div>
+  </div>
 
   <script>
-  const editor = document.getElementById('editor');
-  const downloadButton = document.getElementById('download');
-  const uploadButton = document.getElementById('upload');
-  const newFileButton = document.getElementById('newFile');
-  const deleteFileButton = document.getElementById('deleteFile');
-  const renameFileButton = document.getElementById('renameFile');
-  const fileSelector = document.getElementById('fileSelector');
-  const fileInput = document.getElementById('fileInput');
+    const editor = document.getElementById('editor');
+    const downloadButton = document.getElementById('download');
+    const uploadButton = document.getElementById('upload');
+    const newFileButton = document.getElementById('newFile');
+    const deleteFileButton = document.getElementById('deleteFile');
+    const renameFileButton = document.getElementById('renameFile');
+    const fileSelector = document.getElementById('fileSelector');
+    const customModal = document.getElementById('customModal');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalInput = document.getElementById('modalInput');
+    const modalConfirm = document.getElementById('modalConfirm');
+    const modalCancel = document.getElementById('modalCancel');
 
-  let db;
-  let currentFile = null;
+    let db;
+    let currentFile = null;
+    let modalCallback = null;
 
-  // Open IndexedDB
-  function openDatabase() {
-    const request = indexedDB.open('TextEditorDB', 1);
+    function openModal(message, isInput = false, callback) {
+      modalMessage.textContent = message;
+      modalInput.style.display = isInput ? 'block' : 'none';
+      modalInput.value = '';
+      customModal.classList.add('active');
+      modalCallback = callback;
+    }
 
-    request.onupgradeneeded = (event) => {
-      db = event.target.result;
-      if (!db.objectStoreNames.contains('files')) {
-        db.createObjectStore('files', { keyPath: 'name' });
+    function closeModal() {
+      customModal.classList.remove('active');
+      modalCallback = null;
+    }
+
+    modalConfirm.addEventListener('click', () => {
+      if (modalCallback) {
+        const inputValue = modalInput.style.display === 'block' ? modalInput.value.trim() : true;
+        modalCallback(inputValue);
       }
-    };
+      closeModal();
+    });
 
-    request.onsuccess = (event) => {
-      db = event.target.result;
-      loadFileList();
-    };
+    modalCancel.addEventListener('click', closeModal);
 
-    request.onerror = (event) => {
-      console.error('Database error:', event.target.error);
-    };
-  }
+    function openDatabase() {
+      const request = indexedDB.open('TextEditorDB', 1);
 
-  // Save file to IndexedDB
-  function saveFileToDB(fileName, content) {
-    const transaction = db.transaction('files', 'readwrite');
-    const store = transaction.objectStore('files');
-    store.put({ name: fileName, content: content });
-  }
-
-  // Rename file in IndexedDB
-  function renameFileInDB(oldName, newName) {
-    const transaction = db.transaction('files', 'readwrite');
-    const store = transaction.objectStore('files');
-    const getRequest = store.get(oldName);
-
-    getRequest.onsuccess = () => {
-      const file = getRequest.result;
-      if (file) {
-        // Check if the new name already exists
-        const checkRequest = store.get(newName);
-        checkRequest.onsuccess = () => {
-          const existingFile = checkRequest.result;
-          if (existingFile) {
-            alert('⚠️ a file with this name already exists. please choose a different name');
-          } else {
-            store.delete(oldName);
-            file.name = newName;
-            store.put(file);
-            if (currentFile === oldName) currentFile = newName;
-            loadFileList();
-            fileSelector.value = newName;
-          }
-        };
-      }
-    };
-  }
-
-  // Delete file from IndexedDB
-  function deleteFileFromDB(fileName) {
-    const transaction = db.transaction('files', 'readwrite');
-    const store = transaction.objectStore('files');
-    store.delete(fileName);
-  }
-
-  // Load file list from IndexedDB
-  function loadFileList() {
-    const transaction = db.transaction('files', 'readonly');
-    const store = transaction.objectStore('files');
-    const request = store.getAll();
-
-    request.onsuccess = () => {
-      const files = request.result;
-      fileSelector.innerHTML = '<option value="" disabled selected>select file</option>';
-      files.forEach((file) => {
-        const option = document.createElement('option');
-        option.value = file.name;
-        option.textContent = file.name;
-        fileSelector.appendChild(option);
-      });
-    };
-  }
-
-  // Load file content from IndexedDB
-  function loadFileContent(fileName) {
-    const transaction = db.transaction('files', 'readonly');
-    const store = transaction.objectStore('files');
-    const request = store.get(fileName);
-
-    request.onsuccess = () => {
-      const file = request.result;
-      if (file) {
-        editor.value = file.content;
-        currentFile = fileName;
-      }
-    };
-  }
-
-  // Event Listeners
-  editor.addEventListener('input', () => {
-    if (currentFile) {
-      saveFileToDB(currentFile, editor.value);
-    }
-  });
-
-  renameFileButton.addEventListener('click', () => {
-    if (!currentFile) {
-      alert('⚠️ no file is currently selected');
-      return;
-    }
-    const newName = prompt(`↳ enter new name for the file "${currentFile}":`);
-    if (!newName) {
-      alert('⚠️ invalid name');
-      return;
-    }
-    renameFileInDB(currentFile, newName);
-  });
-
-  newFileButton.addEventListener('click', () => {
-    const fileName = prompt('↳ enter new file name:');
-    if (!fileName) {
-      alert('⚠️ invalid name');
-      return;
-    }
-
-    // Check if file name already exists
-    const transaction = db.transaction('files', 'readonly');
-    const store = transaction.objectStore('files');
-    const request = store.get(fileName);
-
-    request.onsuccess = () => {
-      const existingFile = request.result;
-      if (existingFile) {
-        alert('⚠️ a file with this name already exists. please choose a different name');
-        return;
-      }
-      saveFileToDB(fileName, '');
-      currentFile = fileName;
-      editor.value = '';
-      loadFileList();
-      fileSelector.value = fileName;
-    };
-  });
-
-  deleteFileButton.addEventListener('click', () => {
-    if (currentFile && confirm(`⚠️ are you sure you want to delete '${currentFile}'?`)) {
-      deleteFileFromDB(currentFile);
-      currentFile = null;
-      editor.value = '';
-      loadFileList();
-    }
-  });
-
-  downloadButton.addEventListener('click', () => {
-    if (!currentFile) {
-      alert('⚠️ no file is currently open.');
-      return;
-    }
-    const blob = new Blob([editor.value], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = currentFile + '.txt';
-    a.click();
-  });
-
-  uploadButton.addEventListener('click', () => {
-    fileInput.click();
-  });
-
-  fileInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const content = reader.result;
-        const fileName = prompt('↳ enter name for the uploaded file:');
-        if (!fileName) {
-          alert('⚠️ invalid name.');
-          return;
+      request.onupgradeneeded = (event) => {
+        db = event.target.result;
+        if (!db.objectStoreNames.contains('files')) {
+          db.createObjectStore('files', { keyPath: 'name' });
         }
+      };
 
-        // Check if file name already exists
+      request.onsuccess = (event) => {
+        db = event.target.result;
+        loadFileList();
+      };
+
+      request.onerror = (event) => {
+        console.error('⚠️ database error:', event.target.error);
+      };
+    }
+
+    function saveFileToDB(fileName, content) {
+      const transaction = db.transaction('files', 'readwrite');
+      const store = transaction.objectStore('files');
+      store.put({ name: fileName, content });
+    }
+
+    function loadFileList() {
+      const transaction = db.transaction('files', 'readonly');
+      const store = transaction.objectStore('files');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        const files = request.result;
+        fileSelector.innerHTML = '<option value="" disabled selected>select file</option>';
+        files.forEach((file) => {
+          const option = document.createElement('option');
+          option.value = file.name;
+          option.textContent = file.name;
+          fileSelector.appendChild(option);
+        });
+      };
+    }
+
+    newFileButton.addEventListener('click', () => {
+      openModal('↳ enter new file name:', true, (fileName) => {
+        if (!fileName) return;
+
         const transaction = db.transaction('files', 'readonly');
         const store = transaction.objectStore('files');
         const request = store.get(fileName);
 
         request.onsuccess = () => {
-          const existingFile = request.result;
-          if (existingFile) {
-            alert('⚠️ a file with this name already exists. please choose a different name.');
+          if (request.result) {
+            openModal('⚠️ a file with this name already exists. please choose a different name');
             return;
           }
-          saveFileToDB(fileName, content);
+          saveFileToDB(fileName, '');
           currentFile = fileName;
-          editor.value = content;
+          editor.value = '';
           loadFileList();
-          fileSelector.value = fileName;
         };
+      });
+    });
+
+    deleteFileButton.addEventListener('click', () => {
+      if (!currentFile) {
+        openModal('⚠️ no file is currently selected.');
+        return;
+      }
+      openModal(`⚠️ are you sure you want to delete '${currentFile}'?`, false, (confirm) => {
+        if (confirm) {
+          const transaction = db.transaction('files', 'readwrite');
+          const store = transaction.objectStore('files');
+          store.delete(currentFile);
+          currentFile = null;
+          editor.value = '';
+                    loadFileList();
+        }
+      });
+    });
+
+    renameFileButton.addEventListener('click', () => {
+      if (!currentFile) {
+        openModal('⚠️ no file is currently selected');
+        return;
+      }
+      openModal('↳ enter new name for the file:', true, (newFileName) => {
+        if (!newFileName || newFileName === currentFile) return;
+
+        const transaction = db.transaction('files', 'readwrite');
+        const store = transaction.objectStore('files');
+        const getRequest = store.get(newFileName);
+
+        getRequest.onsuccess = () => {
+          if (getRequest.result) {
+            openModal('⚠️ a file with this name already exists. please choose a different name');
+            return;
+          }
+
+          const deleteRequest = store.delete(currentFile);
+
+          deleteRequest.onsuccess = () => {
+            const currentContent = editor.value;
+            saveFileToDB(newFileName, currentContent);
+            currentFile = newFileName;
+            loadFileList();
+          };
+        };
+      });
+    });
+
+    fileSelector.addEventListener('change', () => {
+      const selectedFile = fileSelector.value;
+      const transaction = db.transaction('files', 'readonly');
+      const store = transaction.objectStore('files');
+      const request = store.get(selectedFile);
+
+      request.onsuccess = () => {
+        const file = request.result;
+        if (file) {
+          currentFile = file.name;
+          editor.value = file.content;
+        }
       };
-      reader.readAsText(file);
-    }
-  });
+    });
 
-  fileSelector.addEventListener('change', (event) => {
-    const fileName = event.target.value;
-    if (fileName) {
-      loadFileContent(fileName);
-    }
-  });
+    editor.addEventListener('input', () => {
+      if (currentFile) {
+        saveFileToDB(currentFile, editor.value);
+      }
+    });
 
-  // Initialize
-  openDatabase();
-</script>
+    downloadButton.addEventListener('click', () => {
+      if (!currentFile) {
+        openModal('⚠️ no file is currently selected');
+        return;
+      }
+      const blob = new Blob([editor.value], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = currentFile;
+      link.click();
+    });
+
+    uploadButton.addEventListener('click', () => {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.txt';
+
+      fileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const content = e.target.result;
+            openModal('↳ enter a name for the uploaded file:', true, (fileName) => {
+              if (!fileName) return;
+              saveFileToDB(fileName, content);
+              currentFile = fileName;
+              editor.value = content;
+              loadFileList();
+            });
+          };
+          reader.readAsText(file);
+        }
+      });
+
+      fileInput.click();
+    });
+
+    openDatabase();
+  </script>
 </body>
 </html>

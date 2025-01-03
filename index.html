@@ -21,6 +21,7 @@
       color: white;
       user-select: none;
     }
+	  
     textarea {
       width: 100%;
       max-width: 650px;
@@ -38,14 +39,17 @@
       transition: background 0.2s ease;
       color: white;
     }
+	  
     textarea:hover {
       background-color: #333;
     }
+	  
     .controls {
       font-family: monospace, sans-serif;
       display: flex;
       gap: 10px;
     }
+	  
     button, select {
       font-family: monospace, sans-serif;
       padding: 10px;
@@ -58,11 +62,13 @@
       transition: background 0.2s ease;
       cursor: pointer;
     }
+	  
     button:hover, select:hover {
       background-color: #333;
     }
+	  
     .modal {
-      display: none;
+      display: flex; /* Ensures flexbox is used for centering */
       position: fixed;
       top: 0;
       left: 0;
@@ -71,10 +77,16 @@
       background: rgba(0, 0, 0, 0.8);
       justify-content: center;
       align-items: center;
+      opacity: 0; /* Start fully transparent */
+      visibility: hidden; /* Hide the modal initially */
+      transition: opacity 0.2s ease, visibility 0.2s ease;
     }
+
     .modal.active {
-      display: flex;
+      opacity: 1; /* Fully visible when active */
+      visibility: visible; /* Ensure it's visible */
     }
+
     .modal-content {
       background: #222;
       padding: 20px;
@@ -83,6 +95,7 @@
       width: 100%;
       max-width: 400px;
     }
+	  
     .modal-content input {
       font-family: monospace, sans-serif;
       width: 94%;
@@ -94,10 +107,12 @@
       background-color: #333;
       color: white;
     }
+	  
     .modal-content button {
       margin: 0 5px;
       font-family: monospace;
     }
+	  
     .file-controls {
   	  font-family: monospace, sans-serif;
       display: flex;
@@ -106,8 +121,8 @@
       padding: 10px 0;      /* Adds equal padding above and below the file controls */
     }
 
-	select, button {
-  	  font-family: monospace, sans-serif;
+    select, button {
+      font-family: monospace, sans-serif;
       padding: 10px;
       font-size: 16px;
       border: none;
@@ -119,7 +134,7 @@
       cursor: pointer;
     }
 
-	select:hover, button:hover {
+    select:hover, button:hover {
       background-color: #333;
     }
   </style>

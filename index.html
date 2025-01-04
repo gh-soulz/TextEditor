@@ -146,6 +146,7 @@
       <option value="" disabled selected>select file</option>
     </select>
     <button id="renameFile">✏️</button>
+
   </div>
   <textarea id="editor" placeholder="✍🏻 start typing..."></textarea>
   <div class="controls">
@@ -375,11 +376,67 @@
           reader.readAsText(file);
         }
       });
-
+	
+     
+    
       fileInput.click();
     });
 
     openDatabase();
   </script>
+  <script>
+  let isLocked = false;
+  let lockPassword = null;
+  
+  const lockFileButton = document.createElement('button');
+lockFileButton.id = 'lockFile';
+lockFileButton.textContent = '🔒';
+document.querySelector('.file-controls').appendChild(lockFileButton);
+
+lockFileButton.addEventListener('click', () => {
+  if (!currentFile) {
+    openModal('⚠️ no file is currently selected', false);
+    return;
+  }
+
+  if (isLocked) {
+    // Unlock flow
+    openModal('↳ dnter password to unlock:', true, (password) => {
+      if (password === lockPassword) {
+        isLocked = false;
+        lockPassword = null;
+        editor.style.filter = 'none'; // Remove blur
+        editor.readOnly = false; // Enable editing
+        lockFileButton.textContent = '🔒'; // Change button text back
+        openModal('✅ file unlocked successfully');
+      } else {
+        openModal('⚠️ incorrect password');
+      }
+    });
+  } else {
+    // Lock flow
+    openModal('↳ enter a password to lock the file:', true, (password) => {
+      if (!password) {
+        openModal('⚠️ Password cannot be empty.', false);
+        return;
+      }
+      lockPassword = password;
+      isLocked = true;
+      editor.style.filter = 'blur(4px)'; // Blur the text editor
+      editor.readOnly = true; // Disable editing
+      lockFileButton.textContent = '🔓'; // Change button text to "Unlock"
+      openModal('✅ file locked successfully');
+    });
+  }
+});
+
+	editor.addEventListener('input', () => {
+  if (isLocked) {
+    openModal('⚠️ file is locked. please unlock to edit', false);
+    editor.value = editor.value; // Revert any unintended changes
+  }
+});
+
+</script>
 </body>
 </html>

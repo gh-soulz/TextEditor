@@ -385,58 +385,90 @@
     openDatabase();
   </script>
   <script>
-  let isLocked = false;
-  let lockPassword = null;
-  
+  const lockedFiles = {}; // Object to store lock states and passwords for each file
+
   const lockFileButton = document.createElement('button');
-lockFileButton.id = 'lockFile';
-lockFileButton.textContent = '🔒';
-document.querySelector('.file-controls').appendChild(lockFileButton);
+  lockFileButton.id = 'lockFile';
+  lockFileButton.textContent = '🔒';
+  document.querySelector('.file-controls').appendChild(lockFileButton);
 
-lockFileButton.addEventListener('click', () => {
-  if (!currentFile) {
-    openModal('⚠️ no file is currently selected', false);
-    return;
-  }
+  lockFileButton.addEventListener('click', () => {
+    if (!currentFile) {
+      openModal('⚠️ no file is currently selected', false);
+      return;
+    }
 
-  if (isLocked) {
-    // Unlock flow
-    openModal('↳ enter password to unlock:', true, (password) => {
-      if (password === lockPassword) {
-        isLocked = false;
-        lockPassword = null;
-        editor.style.filter = 'none'; // Remove blur
-        editor.readOnly = false; // Enable editing
-        lockFileButton.textContent = '🔒'; // Change button text back
-        openModal('✅ file unlocked successfully');
-      } else {
-        openModal('⚠️ incorrect password');
+    const fileLockState = lockedFiles[currentFile];
+
+    if (fileLockState?.isLocked) {
+      // Unlock flow
+      openModal('↳ enter password to unlock:', true, (password) => {
+        if (password === fileLockState.password) {
+          lockedFiles[currentFile] = { isLocked: false, password: null }; // Unlock file
+          editor.style.filter = 'none'; // Remove blur
+          editor.readOnly = false; // Enable editing
+          lockFileButton.textContent = '🔒'; // Change button text back
+          openModal('✅ file unlocked successfully');
+        } else {
+          openModal('⚠️ incorrect password');
+        }
+      });
+    } else {
+      // Lock flow
+      openModal('↳ enter a password to lock the file:', true, (password) => {
+        if (!password) {
+          openModal('⚠️ Password cannot be empty.', false);
+          return;
+        }
+        lockedFiles[currentFile] = { isLocked: true, password }; // Lock file
+        editor.style.filter = 'blur(4px)'; // Blur the text editor
+        editor.readOnly = true; // Disable editing
+        lockFileButton.textContent = '🔓'; // Change button text to "Unlock"
+        openModal('✅ file locked successfully');
+      });
+    }
+  });
+
+  editor.addEventListener('input', () => {
+    const fileLockState = lockedFiles[currentFile];
+    if (fileLockState?.isLocked) {
+      openModal('⚠️ file is locked. please unlock to edit', false);
+      editor.value = fileLockState.cachedContent || ''; // Revert any unintended changes
+    } else if (currentFile) {
+      saveFileToDB(currentFile, editor.value);
+      if (!lockedFiles[currentFile]) {
+        lockedFiles[currentFile] = {}; // Ensure file has a state object
       }
-    });
-  } else {
-    // Lock flow
-    openModal('↳ enter a password to lock the file:', true, (password) => {
-      if (!password) {
-        openModal('⚠️ Password cannot be empty.', false);
-        return;
+      lockedFiles[currentFile].cachedContent = editor.value; // Cache the content
+    }
+  });
+
+  fileSelector.addEventListener('change', () => {
+    const selectedFile = fileSelector.value;
+    const transaction = db.transaction('files', 'readonly');
+    const store = transaction.objectStore('files');
+    const request = store.get(selectedFile);
+
+    request.onsuccess = () => {
+      const file = request.result;
+      if (file) {
+        currentFile = file.name;
+        editor.value = file.content;
+
+        const fileLockState = lockedFiles[currentFile];
+        if (fileLockState?.isLocked) {
+          editor.style.filter = 'blur(4px)'; // Blur the text editor
+          editor.readOnly = true; // Disable editing
+          lockFileButton.textContent = '🔓'; // Indicate file is locked
+        } else {
+          editor.style.filter = 'none'; // Remove blur
+          editor.readOnly = false; // Enable editing
+          lockFileButton.textContent = '🔒'; // Indicate file is unlocked
+        }
       }
-      lockPassword = password;
-      isLocked = true;
-      editor.style.filter = 'blur(4px)'; // Blur the text editor
-      editor.readOnly = true; // Disable editing
-      lockFileButton.textContent = '🔓'; // Change button text to "Unlock"
-      openModal('✅ file locked successfully');
-    });
-  }
-});
-
-	editor.addEventListener('input', () => {
-  if (isLocked) {
-    openModal('⚠️ file is locked. please unlock to edit', false);
-    editor.value = editor.value; // Revert any unintended changes
-  }
-});
-
+    };
+  });
 </script>
+
 </body>
 </html>

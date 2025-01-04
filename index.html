@@ -401,7 +401,7 @@ lockFileButton.addEventListener('click', () => {
 
   if (isLocked) {
     // Unlock flow
-    openModal('↳ dnter password to unlock:', true, (password) => {
+    openModal('↳ enter password to unlock:', true, (password) => {
       if (password === lockPassword) {
         isLocked = false;
         lockPassword = null;

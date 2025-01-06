@@ -6,8 +6,12 @@
   <title>📝 text editor v4.1</title>
   <link rel="icon" type="image/x-icon" href="image.png">
   <style>
+    @font-face {
+	font-family: 'goldie-sans';
+	src: url(goldie-sans.otf)
+    }
     body {
-      font-family: monospace, sans-serif;
+      font-family: 'goldie-sans';
       margin: 0;
       padding: 0;
       box-sizing: border-box;
@@ -24,6 +28,7 @@
 	  
     textarea {
       width: 100%;
+      font-family: 'goldie-sans';
       max-width: 650px;
       height: 300px;
       min-height: 300px;
@@ -51,7 +56,7 @@
     }
 	  
     button, select {
-      font-family: monospace, sans-serif;
+      font-family: 'goldie-sans';
       padding: 10px;
       font-size: 16px;
       border: none;
@@ -97,7 +102,7 @@
     }
 	  
     .modal-content input {
-      font-family: monospace, sans-serif;
+      font-family: 'goldie-sans';
       width: 94%;
       padding: 10px;
       margin-bottom: 20px;
@@ -114,7 +119,7 @@
     }
 	  
     .file-controls {
-      font-family: monospace, sans-serif;
+      font-family: 'goldie-sans';
       display: flex;
       gap: 10px;
       align-items: center;  /* Ensures vertical alignment of the items */
@@ -122,7 +127,7 @@
     }
 
     select, button {
-      font-family: monospace, sans-serif;
+      font-family: 'goldie-sans';
       padding: 10px;
       font-size: 16px;
       border: none;

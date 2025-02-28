@@ -1,4 +1,3 @@
-<!--new metadata feature 28.02.25-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -268,7 +267,7 @@
       request.onsuccess = () => {
         const files = request.result;
         fileSelector.innerHTML =
-          '<option value=\"\" disabled selected>select file</option>';
+          '<option value="" disabled selected>select file</option>';
         files.forEach((file) => {
           const option = document.createElement('option');
           option.value = file.name;
@@ -569,7 +568,7 @@
           // Letters and words
           fileLetters.textContent = `Letters: ${file.content.length}`;
           fileWords.textContent = `Words: ${
-            file.content.trim().split(/\\s+/).filter(Boolean).length
+            file.content.trim().split(/\s+/).filter(Boolean).length
           }`;
 
           metadataModal.classList.add('active');

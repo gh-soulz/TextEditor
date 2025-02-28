@@ -1,14 +1,15 @@
+<!--new metadata feature 28.02.25-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📝 text editor v4.1</title>
-  <link rel="icon" type="image/x-icon" href="icon.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📝 text editor v5</title>
+  <link rel="icon" type="image/x-icon" href="icon.png" />
   <style>
     @font-face {
-	font-family: 'lexend';
-	src: url(lexend-regular.ttf)
+      font-family: 'lexend';
+      src: url(lexend-regular.ttf);
     }
     body {
       font-family: 'lexend';
@@ -25,7 +26,6 @@
       color: white;
       user-select: none;
     }
-	  
     textarea {
       width: 100%;
       font-family: 'lexend';
@@ -44,18 +44,21 @@
       transition: background 0.2s ease;
       color: white;
     }
-	  
     textarea:hover {
       background-color: #333;
     }
-	  
+    .file-controls,
     .controls {
       font-family: 'lexend';
       display: flex;
       gap: 10px;
     }
-	  
-    button, select {
+    /* Restore padding under file select */
+    .file-controls {
+      padding: 10px 0;
+    }
+    button,
+    select {
       font-family: 'lexend';
       padding: 10px;
       font-size: 16px;
@@ -67,13 +70,12 @@
       transition: background 0.2s ease;
       cursor: pointer;
     }
-	  
-    button:hover, select:hover {
+    button:hover,
+    select:hover {
       background-color: #333;
     }
-	  
     .modal {
-      display: flex; /* Ensures flexbox is used for centering */
+      display: flex; /* Use flexbox for centering */
       position: fixed;
       top: 0;
       left: 0;
@@ -83,15 +85,13 @@
       justify-content: center;
       align-items: center;
       opacity: 0; /* Start fully transparent */
-      visibility: hidden; /* Hide the modal initially */
+      visibility: hidden; /* Hidden by default */
       transition: opacity 0.2s ease, visibility 0.2s ease;
     }
-
     .modal.active {
       opacity: 1; /* Fully visible when active */
-      visibility: visible; /* Ensure it's visible */
+      visibility: visible;
     }
-
     .modal-content {
       background: #222;
       padding: 20px;
@@ -100,7 +100,6 @@
       width: 100%;
       max-width: 400px;
     }
-	  
     .modal-content input {
       font-family: 'lexend';
       width: 94%;
@@ -112,57 +111,37 @@
       background-color: #333;
       color: white;
     }
-	  
     .modal-content button {
       margin: 0 5px;
-      font-family: lexend;
-    }
-	  
-    .file-controls {
       font-family: 'lexend';
-      display: flex;
-      gap: 10px;
-      align-items: center;  /* Ensures vertical alignment of the items */
-      padding: 10px 0;      /* Adds equal padding above and below the file controls */
-    }
-
-    select, button {
-      font-family: 'lexend';
-      padding: 10px;
-      font-size: 16px;
-      border: none;
-      outline: none;
-      background-color: #222;
-      color: white;
-      border-radius: 7px;
-      transition: background 0.2s ease;
-      cursor: pointer;
-    }
-
-    select:hover, button:hover {
-      background-color: #333;
     }
   </style>
 </head>
 <body>
-  <h1>📝 text editor v4.1</h1>
+  <h1>📝 text editor v5</h1>
+
+  <!-- File selector + rename -->
   <div class="file-controls">
     <select id="fileSelector">
       <option value="" disabled selected>select file</option>
     </select>
     <button id="renameFile">✏️</button>
-
   </div>
+
+  <!-- Main editor -->
   <textarea id="editor" placeholder="✍🏻 start typing..."></textarea>
+
+  <!-- Buttons row -->
   <div class="controls">
     <button id="download">💾</button>
     <button id="upload">📤</button>
     <button id="newFile">➕</button>
     <button id="deleteFile">🗑️</button>
     <button id="updates" onclick="location.href='updates';">ℹ️</button>
+    <button id="fileMetadata">📊</button>
   </div>
 
-  <!-- Custom Modal -->
+  <!-- Custom modal (renaming, confirmations, etc.) -->
   <div id="customModal" class="modal">
     <div class="modal-content">
       <p id="modalMessage"></p>
@@ -174,7 +153,24 @@
     </div>
   </div>
 
+  <!-- Metadata Modal -->
+  <div id="metadataModal" class="modal">
+    <div class="modal-content">
+      <h2>📊 file metadata</h2>
+      <p id="fileName"></p>
+      <p id="fileCreated"></p>
+      <p id="fileLastModified"></p>
+      <p id="fileSize"></p>
+      <p id="fileLetters"></p>
+      <p id="fileWords"></p>
+      <button id="closeMetadata">❌ close</button>
+    </div>
+  </div>
+
   <script>
+    /* ---------------------------
+       Main IndexedDB + Editor JS
+    ----------------------------*/
     const editor = document.getElementById('editor');
     const downloadButton = document.getElementById('download');
     const uploadButton = document.getElementById('upload');
@@ -207,7 +203,10 @@
 
     modalConfirm.addEventListener('click', () => {
       if (modalCallback) {
-        const inputValue = modalInput.style.display === 'block' ? modalInput.value.trim() : true;
+        const inputValue =
+          modalInput.style.display === 'block'
+            ? modalInput.value.trim()
+            : true;
         modalCallback(inputValue);
       }
       closeModal();
@@ -235,10 +234,30 @@
       };
     }
 
+    /**
+     * Save or update a file in IndexedDB.
+     * - Preserves creation date if already present
+     * - Always updates lastModified
+     */
     function saveFileToDB(fileName, content) {
       const transaction = db.transaction('files', 'readwrite');
       const store = transaction.objectStore('files');
-      store.put({ name: fileName, content });
+      const getRequest = store.get(fileName);
+
+      getRequest.onsuccess = () => {
+        // preserve creation timestamp if it exists
+        let created;
+        if (getRequest.result && getRequest.result.created) {
+          created = getRequest.result.created;
+        } else {
+          created = new Date().toISOString();
+        }
+
+        // always update lastModified
+        const lastModified = new Date().toISOString();
+
+        store.put({ name: fileName, content, created, lastModified });
+      };
     }
 
     function loadFileList() {
@@ -248,7 +267,8 @@
 
       request.onsuccess = () => {
         const files = request.result;
-        fileSelector.innerHTML = '<option value="" disabled selected>select file</option>';
+        fileSelector.innerHTML =
+          '<option value=\"\" disabled selected>select file</option>';
         files.forEach((file) => {
           const option = document.createElement('option');
           option.value = file.name;
@@ -268,9 +288,12 @@
 
         request.onsuccess = () => {
           if (request.result) {
-            openModal('⚠️ a file with this name already exists. please choose a different name');
+            openModal(
+              '⚠️ a file with this name already exists. please choose a different name'
+            );
             return;
           }
+          // Save new file (with creation timestamp)
           saveFileToDB(fileName, '');
           currentFile = fileName;
           editor.value = '';
@@ -291,11 +314,12 @@
           store.delete(currentFile);
           currentFile = null;
           editor.value = '';
-                    loadFileList();
+          loadFileList();
         }
       });
     });
 
+    // Preserve creation timestamp on rename
     renameFileButton.addEventListener('click', () => {
       if (!currentFile) {
         openModal('⚠️ no file is currently selected');
@@ -306,21 +330,37 @@
 
         const transaction = db.transaction('files', 'readwrite');
         const store = transaction.objectStore('files');
-        const getRequest = store.get(newFileName);
+        // get the old file to preserve its created date
+        const oldFileRequest = store.get(currentFile);
 
-        getRequest.onsuccess = () => {
-          if (getRequest.result) {
-            openModal('⚠️ a file with this name already exists. please choose a different name');
-            return;
-          }
+        oldFileRequest.onsuccess = () => {
+          const oldFile = oldFileRequest.result;
+          const created = oldFile ? oldFile.created : new Date().toISOString();
+          const currentContent = editor.value;
+          const lastModified = new Date().toISOString();
 
-          const deleteRequest = store.delete(currentFile);
+          // check if the new name already exists
+          const getRequest = store.get(newFileName);
+          getRequest.onsuccess = () => {
+            if (getRequest.result) {
+              openModal(
+                '⚠️ a file with this name already exists. please choose a different name'
+              );
+              return;
+            }
+            // delete old file, then create the new one
+            const deleteRequest = store.delete(currentFile);
 
-          deleteRequest.onsuccess = () => {
-            const currentContent = editor.value;
-            saveFileToDB(newFileName, currentContent);
-            currentFile = newFileName;
-            loadFileList();
+            deleteRequest.onsuccess = () => {
+              store.put({
+                name: newFileName,
+                content: currentContent,
+                created,
+                lastModified
+              });
+              currentFile = newFileName;
+              loadFileList();
+            };
           };
         };
       });
@@ -381,99 +421,165 @@
           reader.readAsText(file);
         }
       });
-	
-     
-    
       fileInput.click();
     });
 
     openDatabase();
   </script>
+
   <script>
-  const lockedFiles = {}; // Object to store lock states and passwords for each file
+    /* -------------------------
+       Locking/Unlocking Feature
+    --------------------------*/
+    const lockedFiles = {}; // Store lock states for each file
+    const lockFileButton = document.createElement('button');
+    lockFileButton.id = 'lockFile';
+    lockFileButton.textContent = '🔒';
+    document.querySelector('.file-controls').appendChild(lockFileButton);
 
-  const lockFileButton = document.createElement('button');
-  lockFileButton.id = 'lockFile';
-  lockFileButton.textContent = '🔒';
-  document.querySelector('.file-controls').appendChild(lockFileButton);
-
-  lockFileButton.addEventListener('click', () => {
-    if (!currentFile) {
-      openModal('⚠️ no file is currently selected', false);
-      return;
-    }
-
-    const fileLockState = lockedFiles[currentFile];
-
-    if (fileLockState?.isLocked) {
-      // Unlock flow
-      openModal('↳ enter password to unlock:', true, (password) => {
-        if (password === fileLockState.password) {
-          lockedFiles[currentFile] = { isLocked: false, password: null }; // Unlock file
-          editor.style.filter = 'none'; // Remove blur
-          editor.readOnly = false; // Enable editing
-          lockFileButton.textContent = '🔒'; // Change button text back
-          openModal('✅ file unlocked successfully');
-        } else {
-          openModal('⚠️ incorrect password');
-        }
-      });
-    } else {
-      // Lock flow
-      openModal('↳ enter a password to lock the file:', true, (password) => {
-        if (!password) {
-          openModal('⚠️ Password cannot be empty.', false);
-          return;
-        }
-        lockedFiles[currentFile] = { isLocked: true, password }; // Lock file
-        editor.style.filter = 'blur(4px)'; // Blur the text editor
-        editor.readOnly = true; // Disable editing
-        lockFileButton.textContent = '🔓'; // Change button text to "Unlock"
-        openModal('✅ file locked successfully');
-      });
-    }
-  });
-
-  editor.addEventListener('input', () => {
-    const fileLockState = lockedFiles[currentFile];
-    if (fileLockState?.isLocked) {
-      openModal('⚠️ file is locked. please unlock to edit', false);
-      editor.value = fileLockState.cachedContent || ''; // Revert any unintended changes
-    } else if (currentFile) {
-      saveFileToDB(currentFile, editor.value);
-      if (!lockedFiles[currentFile]) {
-        lockedFiles[currentFile] = {}; // Ensure file has a state object
+    lockFileButton.addEventListener('click', () => {
+      if (!currentFile) {
+        openModal('⚠️ no file is currently selected', false);
+        return;
       }
-      lockedFiles[currentFile].cachedContent = editor.value; // Cache the content
-    }
-  });
 
-  fileSelector.addEventListener('change', () => {
-    const selectedFile = fileSelector.value;
-    const transaction = db.transaction('files', 'readonly');
-    const store = transaction.objectStore('files');
-    const request = store.get(selectedFile);
+      const fileLockState = lockedFiles[currentFile];
 
-    request.onsuccess = () => {
-      const file = request.result;
-      if (file) {
-        currentFile = file.name;
-        editor.value = file.content;
-
-        const fileLockState = lockedFiles[currentFile];
-        if (fileLockState?.isLocked) {
-          editor.style.filter = 'blur(4px)'; // Blur the text editor
-          editor.readOnly = true; // Disable editing
-          lockFileButton.textContent = '🔓'; // Indicate file is locked
-        } else {
-          editor.style.filter = 'none'; // Remove blur
-          editor.readOnly = false; // Enable editing
-          lockFileButton.textContent = '🔒'; // Indicate file is unlocked
-        }
+      if (fileLockState?.isLocked) {
+        // Unlock flow
+        openModal('↳ enter password to unlock:', true, (password) => {
+          if (password === fileLockState.password) {
+            lockedFiles[currentFile] = { isLocked: false, password: null };
+            editor.style.filter = 'none';
+            editor.readOnly = false;
+            lockFileButton.textContent = '🔒';
+            openModal('✅ file unlocked successfully');
+          } else {
+            openModal('⚠️ incorrect password');
+          }
+        });
+      } else {
+        // Lock flow
+        openModal('↳ enter a password to lock the file:', true, (password) => {
+          if (!password) {
+            openModal('⚠️ Password cannot be empty.', false);
+            return;
+          }
+          lockedFiles[currentFile] = { isLocked: true, password };
+          editor.style.filter = 'blur(4px)';
+          editor.readOnly = true;
+          lockFileButton.textContent = '🔓';
+          openModal('✅ file locked successfully');
+        });
       }
-    };
-  });
-</script>
+    });
 
+    // Prevent edits if file is locked
+    editor.addEventListener('input', () => {
+      const fileLockState = lockedFiles[currentFile];
+      if (fileLockState?.isLocked) {
+        openModal('⚠️ file is locked. please unlock to edit', false);
+        editor.value = fileLockState.cachedContent || '';
+      } else if (currentFile) {
+        saveFileToDB(currentFile, editor.value);
+        if (!lockedFiles[currentFile]) {
+          lockedFiles[currentFile] = {};
+        }
+        lockedFiles[currentFile].cachedContent = editor.value;
+      }
+    });
+
+    // Switch lock states on file change
+    fileSelector.addEventListener('change', () => {
+      const selectedFile = fileSelector.value;
+      const transaction = db.transaction('files', 'readonly');
+      const store = transaction.objectStore('files');
+      const request = store.get(selectedFile);
+
+      request.onsuccess = () => {
+        const file = request.result;
+        if (file) {
+          currentFile = file.name;
+          editor.value = file.content;
+          const fileLockState = lockedFiles[currentFile];
+          if (fileLockState?.isLocked) {
+            editor.style.filter = 'blur(4px)';
+            editor.readOnly = true;
+            lockFileButton.textContent = '🔓';
+          } else {
+            editor.style.filter = 'none';
+            editor.readOnly = false;
+            lockFileButton.textContent = '🔒';
+          }
+        }
+      };
+    });
+  </script>
+
+  <script>
+    /* ------------------------
+       Metadata Modal Feature
+    -------------------------*/
+    const fileMetadataButton = document.getElementById('fileMetadata');
+    const metadataModal = document.getElementById('metadataModal');
+    const fileNameEl = document.getElementById('fileName');
+    const fileCreated = document.getElementById('fileCreated');
+    const fileLastModified = document.getElementById('fileLastModified');
+    const fileSizeEl = document.getElementById('fileSize');
+    const fileLetters = document.getElementById('fileLetters');
+    const fileWords = document.getElementById('fileWords');
+    const closeMetadataButton = document.getElementById('closeMetadata');
+
+    fileMetadataButton.addEventListener('click', () => {
+      if (!currentFile) {
+        openModal('⚠️ no file is currently selected');
+        return;
+      }
+
+      const transaction = db.transaction('files', 'readonly');
+      const store = transaction.objectStore('files');
+      const request = store.get(currentFile);
+
+      request.onsuccess = () => {
+        const file = request.result;
+        if (file) {
+          // File name
+          fileNameEl.textContent = `File Name: ${file.name}`;
+
+          // Creation date
+          fileCreated.textContent = `Created: ${
+            file.created
+              ? new Date(file.created).toLocaleString()
+              : 'Not Available'
+          }`;
+
+          // Last modified date
+          fileLastModified.textContent = `Last Modified: ${
+            file.lastModified
+              ? new Date(file.lastModified).toLocaleString()
+              : 'Not Available'
+          }`;
+
+          // File size in bytes (via Blob)
+          const sizeInBytes = new Blob([file.content], {
+            type: 'text/plain',
+          }).size;
+          fileSizeEl.textContent = `File Size: ${sizeInBytes} bytes`;
+
+          // Letters and words
+          fileLetters.textContent = `Letters: ${file.content.length}`;
+          fileWords.textContent = `Words: ${
+            file.content.trim().split(/\\s+/).filter(Boolean).length
+          }`;
+
+          metadataModal.classList.add('active');
+        }
+      };
+    });
+
+    closeMetadataButton.addEventListener('click', () => {
+      metadataModal.classList.remove('active');
+    });
+  </script>
 </body>
 </html>

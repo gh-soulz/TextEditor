@@ -543,31 +543,31 @@
         const file = request.result;
         if (file) {
           // File name
-          fileNameEl.textContent = `File Name: ${file.name}`;
+          fileNameEl.textContent = `file name: ${file.name}`;
 
           // Creation date
-          fileCreated.textContent = `Created: ${
+          fileCreated.textContent = `created: ${
             file.created
               ? new Date(file.created).toLocaleString()
-              : 'Not Available'
+              : 'not available'
           }`;
 
           // Last modified date
-          fileLastModified.textContent = `Last Modified: ${
+          fileLastModified.textContent = `last modified: ${
             file.lastModified
               ? new Date(file.lastModified).toLocaleString()
-              : 'Not Available'
+              : 'not available'
           }`;
 
           // File size in bytes (via Blob)
           const sizeInBytes = new Blob([file.content], {
             type: 'text/plain',
           }).size;
-          fileSizeEl.textContent = `File Size: ${sizeInBytes} bytes`;
+          fileSizeEl.textContent = `file size: ${sizeInBytes} bytes`;
 
           // Letters and words
-          fileLetters.textContent = `Letters: ${file.content.length}`;
-          fileWords.textContent = `Words: ${
+          fileLetters.textContent = `letters: ${file.content.length}`;
+          fileWords.textContent = `words: ${
             file.content.trim().split(/\s+/).filter(Boolean).length
           }`;
 

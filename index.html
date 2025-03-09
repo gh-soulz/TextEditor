@@ -3,13 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📝 text editor v5</title>
+  <title>📝 text editor v6</title>
   <link rel="icon" type="image/x-icon" href="icon.png" />
   <style>
     @font-face {
-      font-family: 'lexend';
-      src: url(lexend-regular.ttf);
+      font-family: 'Playfair Display';
+      src: url('fonts/PlayfairDisplay.ttf') format('truetype');
     }
+    @font-face {
+      font-family: 'Rubik';
+      src: url('fonts/Rubik.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Syne';
+      src: url('fonts/Syne.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Nunito';
+      src: url('fonts/Nunito.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Lora';
+      src: url('fonts/Lora.ttf') format('truetype');
+    }
+
+    :root {
+      --background-color: #111; /* Dark mode background */
+      --text-color: white; /* Dark mode text color */
+      --modal-background: #222; /* Dark mode modal background */
+      --input-background: #333; /* Dark mode input background */
+    }
+
+    body.light-mode {
+      --background-color: #f5f5f5; /* Light mode background */
+      --text-color: #333; /* Light mode text color */
+      --modal-background: #fff; /* Light mode modal background */
+      --input-background: #eee; /* Light mode input background */
+    }
+
     body {
       font-family: 'lexend';
       margin: 0;
@@ -21,13 +52,15 @@
       align-items: center;
       min-height: 100vh;
       padding: 20px;
-      background-color: #111;
-      color: white;
+      background-color: var(--background-color);
+      color: var(--text-color);
       user-select: none;
+      transition: background-color 0.3s ease, color 0.3s ease;
     }
+
     textarea {
       width: 100%;
-      font-family: 'lexend';
+      font-family: inherit;
       max-width: 650px;
       height: 300px;
       min-height: 300px;
@@ -36,45 +69,50 @@
       margin-bottom: 20px;
       padding: 10px;
       font-size: 16px;
-      background-color: #222;
+      background-color: var(--modal-background);
       border: none;
       outline: none;
       border-radius: 7px;
       transition: background 0.2s ease;
-      color: white;
+      color: var(--text-color);
     }
+
     textarea:hover {
-      background-color: #333;
+      background-color: var(--input-background);
     }
+
     .file-controls,
     .controls {
-      font-family: 'lexend';
+      font-family: inherit;
       display: flex;
       gap: 10px;
     }
-    /* Restore padding under file select */
+
     .file-controls {
       padding: 10px 0;
     }
+
     button,
     select {
-      font-family: 'lexend';
+      font-family: inherit;
       padding: 10px;
       font-size: 16px;
       border: none;
       outline: none;
-      background-color: #222;
-      color: white;
+      background-color: var(--modal-background);
+      color: var(--text-color);
       border-radius: 7px;
       transition: background 0.2s ease;
       cursor: pointer;
     }
+
     button:hover,
     select:hover {
-      background-color: #333;
+      background-color: var(--input-background);
     }
+
     .modal {
-      display: flex; /* Use flexbox for centering */
+      display: flex;
       position: fixed;
       top: 0;
       left: 0;
@@ -83,41 +121,90 @@
       background: rgba(0, 0, 0, 0.8);
       justify-content: center;
       align-items: center;
-      opacity: 0; /* Start fully transparent */
-      visibility: hidden; /* Hidden by default */
+      opacity: 0;
+      visibility: hidden;
       transition: opacity 0.2s ease, visibility 0.2s ease;
     }
+
     .modal.active {
-      opacity: 1; /* Fully visible when active */
+      opacity: 1;
       visibility: visible;
     }
+
     .modal-content {
-      background: #222;
-      padding: 20px;
+      background: var(--modal-background);
+      padding: 30px;
       border-radius: 10px;
       text-align: center;
       width: 100%;
       max-width: 400px;
+      outline: none;
+      font-family: inherit;
+      color: var(--text-color);
     }
+
     .modal-content input {
-      font-family: 'lexend';
+      font-family: inherit;
       width: 94%;
       padding: 10px;
       margin-bottom: 20px;
       border: none;
       outline: none;
       border-radius: 5px;
-      background-color: #333;
-      color: white;
+      background-color: var(--input-background);
+      color: var(--text-color);
     }
+
     .modal-content button {
       margin: 0 5px;
-      font-family: 'lexend';
+      font-family: inherit;
+    }
+
+    #styleSettingsModal .modal-content {
+      padding: 30px;
+    }
+
+    #styleSettingsModal label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    #styleSettingsModal input[type="color"],
+    #styleSettingsModal select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      background-color: var(--input-background);
+      color: var(--text-color);
+      border: none;
+      outline: none;
+      font-family: inherit;
+    }
+
+    #styleSettingsModal .slider-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    #styleSettingsModal input[type="range"] {
+      width: 80%;
+      cursor: pointer;
+    }
+
+    #styleSettingsModal button {
+      margin-top: 20px;
+    }
+
+    h1 {
+      margin-bottom: 5px;
     }
   </style>
 </head>
 <body>
-  <h1>📝 text editor v5</h1>
+  <h1>📝 text editor v6</h1>
 
   <!-- File selector + rename -->
   <div class="file-controls">
@@ -125,6 +212,7 @@
       <option value="" disabled selected>select file</option>
     </select>
     <button id="renameFile">✏️</button>
+    <button id="themeToggle">☀️</button> <!-- New theme toggle button -->
   </div>
 
   <!-- Main editor -->
@@ -138,6 +226,7 @@
     <button id="deleteFile">🗑️</button>
     <button id="updates" onclick="location.href='updates';">ℹ️</button>
     <button id="fileMetadata">📊</button>
+    <button id="styleSettings">🎨</button>
   </div>
 
   <!-- Custom modal (renaming, confirmations, etc.) -->
@@ -166,6 +255,39 @@
     </div>
   </div>
 
+  <!-- Style Settings Modal -->
+  <div id="styleSettingsModal" class="modal">
+    <div class="modal-content">
+      <h2>🎨 style settings</h2>
+      <label for="outlineColor">outline color:</label>
+      <input type="color" id="outlineColor" value="#000000">
+      <label for="outlineThickness">outline thickness:</label>
+      <div class="slider-container">
+        <input type="range" id="outlineThickness" min="0" max="4" step="1" value="0">
+      </div>
+      <label for="fontSelector">font:</label>
+      <select id="fontSelector">
+        <option value="lexend">lexend</option>
+        <option value="Playfair Display">playfair display</option>
+        <option value="Rubik">rubik</option>
+        <option value="Syne">syne</option>
+        <option value="Nunito">nunito</option>
+        <option value="Lora">lora</option>
+      </select>
+      <label for="presets">presets:</label>
+      <select id="presets">
+        <option value="default">default</option>
+        <option value="sakura">sakura</option>
+        <option value="purpleHaze">purple haze</option>
+        <option value="azure">azure</option>
+        <option value="celadon">celadon</option>
+        <option value="carmine">carmine</option>
+      </select>
+      <button id="applyStyle">✅ apply</button>
+      <button id="closeStyleSettings">❌ close</button>
+    </div>
+  </div>
+
   <script>
     /* ---------------------------
        Main IndexedDB + Editor JS
@@ -182,10 +304,33 @@
     const modalInput = document.getElementById('modalInput');
     const modalConfirm = document.getElementById('modalConfirm');
     const modalCancel = document.getElementById('modalCancel');
+    const styleSettingsButton = document.getElementById('styleSettings');
+    const styleSettingsModal = document.getElementById('styleSettingsModal');
+    const outlineColor = document.getElementById('outlineColor');
+    const outlineThickness = document.getElementById('outlineThickness');
+    const fontSelector = document.getElementById('fontSelector');
+    const presets = document.getElementById('presets');
+    const applyStyleButton = document.getElementById('applyStyle');
+    const closeStyleSettingsButton = document.getElementById('closeStyleSettings');
+    const themeToggle = document.getElementById('themeToggle');
 
     let db;
     let currentFile = null;
     let modalCallback = null;
+
+    // Theme Toggle Logic
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      document.body.classList.add(savedTheme);
+      themeToggle.textContent = savedTheme === 'light-mode' ? '🌙' : '🌞';
+    }
+
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      const isLightMode = document.body.classList.contains('light-mode');
+      themeToggle.textContent = isLightMode ? '🌙' : '🌞';
+      localStorage.setItem('theme', isLightMode ? 'light-mode' : 'dark-mode');
+    });
 
     function openModal(message, isInput = false, callback) {
       modalMessage.textContent = message;
@@ -424,6 +569,79 @@
     });
 
     openDatabase();
+
+    /* -------------------------
+       Style Settings Modal
+    --------------------------*/
+    styleSettingsButton.addEventListener('click', () => {
+      styleSettingsModal.classList.add('active');
+    });
+
+    closeStyleSettingsButton.addEventListener('click', () => {
+      styleSettingsModal.classList.remove('active');
+    });
+
+    applyStyleButton.addEventListener('click', () => {
+      const color = outlineColor.value;
+      const thickness = outlineThickness.value;
+      const font = fontSelector.value;
+
+      // Apply font to the entire page
+      document.body.style.fontFamily = font;
+
+      // Apply font to buttons, textarea, and select elements
+      document.querySelectorAll('button, textarea, select, input, .modal-content').forEach(element => {
+        element.style.fontFamily = font;
+      });
+
+      // Apply outline styles to buttons, textarea, and select elements
+      document.querySelectorAll('button, textarea, select').forEach(element => {
+        element.style.outlineColor = color;
+        element.style.outlineWidth = `${thickness}px`;
+        element.style.outlineStyle = thickness > 0 ? 'solid' : 'none'; // Hide outline if thickness is 0
+      });
+
+      // Apply outline styles to modal backgrounds
+      document.querySelectorAll('.modal-content').forEach(modal => {
+        modal.style.outlineColor = color;
+        modal.style.outlineWidth = `${thickness}px`;
+        modal.style.outlineStyle = thickness > 0 ? 'solid' : 'none';
+      });
+
+      styleSettingsModal.classList.remove('active');
+    });
+
+    presets.addEventListener('change', (event) => {
+      const preset = event.target.value;
+      if (preset === 'default') {
+        outlineColor.value = '#000000';
+        outlineThickness.value = 0; // No outline for default
+        fontSelector.value = 'lexend'; // Lexend font for default
+      } else if (preset === 'sakura') {
+        outlineColor.value = '#FFB7C5'; // Sakura color
+        outlineThickness.value = 3;
+        fontSelector.value = 'Playfair Display';
+      } else if (preset === 'purpleHaze') {
+        outlineColor.value = '#7D7098'; // Purple Haze color
+        outlineThickness.value = 3;
+        fontSelector.value = 'Rubik';
+      } else if (preset === 'azure') {
+        outlineColor.value = '#F0FFFF'; // Azure color
+        outlineThickness.value = 3;
+        fontSelector.value = 'Syne';
+      } else if (preset === 'celadon') {
+        outlineColor.value = '#AFE1AF'; // Celadon color
+        outlineThickness.value = 3;
+        fontSelector.value = 'Nunito';
+      } else if (preset === 'carmine') {
+        outlineColor.value = '#D70040'; // Carmine color
+        outlineThickness.value = 3;
+        fontSelector.value = 'Lora';
+      }
+
+      // Automatically apply the selected preset
+      applyStyleButton.click();
+    });
   </script>
 
   <script>

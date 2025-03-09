@@ -26,6 +26,10 @@
       font-family: 'Lora';
       src: url('fonts/Lora.ttf') format('truetype');
     }
+    @font-face {
+      font-family: 'Lexend';
+      src: url('fonts/Lexend.ttf') format('truetype');
+    }
 
     :root {
       --background-color: #111; /* Dark mode background */
@@ -267,7 +271,7 @@
       </div>
       <label for="fontSelector">font:</label>
       <select id="fontSelector">
-        <option value="lexend">lexend</option>
+        <option value="Lexend">lexend</option>
         <option value="Playfair Display">playfair display</option>
         <option value="Rubik">rubik</option>
         <option value="Syne">syne</option>
@@ -616,7 +620,7 @@
       if (preset === 'default') {
         outlineColor.value = '#000000';
         outlineThickness.value = 0; // No outline for default
-        fontSelector.value = 'lexend'; // Lexend font for default
+        fontSelector.value = 'Lexend'; // Lexend font for default
       } else if (preset === 'sakura') {
         outlineColor.value = '#FFB7C5'; // Sakura color
         outlineThickness.value = 3;

@@ -1,102 +1,906 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>text editor update log</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📝 text editor v6</title>
+  <link rel="icon" type="image/x-icon" href="icon.png" />
+  <style>
+    @font-face {
+      font-family: 'Lexend';
+      src: url('fonts/Lexend.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Playfair Display';
+      src: url('fonts/PlayfairDisplay.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Rubik';
+      src: url('fonts/Rubik.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Syne';
+      src: url('fonts/Syne.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Nunito';
+      src: url('fonts/Nunito.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Lora';
+      src: url('fonts/Lora.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'Heavitas';
+      src: url(fonts/Heavitas.ttf) format('truetype');
+    }
+    @font-face {
+      font-family: 'Ubuntu';
+      src: url(fonts/Ubuntu.ttf) format('truetype');
+    }
 
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #111;
-            font-family: monospace, sans-serif;
-            flex-direction: column; /* Align elements vertically */
-        }
+    :root {
+      --background-color: #111; /* Dark mode background */
+      --text-color: white; /* Dark mode text color */
+      --modal-background: #222; /* Dark mode modal background */
+      --input-background: #333; /* Dark mode input background */
+    }
 
-        .container {
-            width: 90%;
-            max-width: 500px;
-            background-color: #222;
-            border-radius: 5px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-        }
+    body.light-mode {
+      --background-color: #f5f5f5; /* Light mode background */
+      --text-color: #333; /* Light mode text color */
+      --modal-background: #fff; /* Light mode modal background */
+      --input-background: #eee; /* Light mode input background */
+    }
 
-        .title {
-            text-align: center;
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            color: white;
-        }
+    body {
+      font-family: 'lexend';
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      user-select: none;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
 
-        .scroll-box {
-            height: 300px;
-            overflow-y: auto;
-            padding: 10px;
-            border-radius: 5px;
-            background-color: #333;
-        }
+    textarea {
+      width: 100%;
+      font-family: inherit;
+      max-width: 650px;
+      height: 300px;
+      min-height: 300px;
+      max-height: 400px;
+      resize: none;
+      margin-bottom: 20px;
+      padding: 10px;
+      font-size: 16px;
+      background-color: var(--modal-background);
+      border: none;
+      outline: none;
+      border-radius: 7px;
+      transition: background 0.2s ease;
+      color: var(--text-color);
+    }
 
-        .scroll-box p {
-            margin-bottom: 10px;
-            line-height: 1.6;
-            color: white;
-        }
+    textarea:hover {
+      background-color: var(--input-background);
+    }
 
-        /* Add some space between the container and the button */
-        .button-container {
-            margin-top: 20px;
-        }
+    .file-controls,
+    .controls {
+      font-family: inherit;
+      display: flex;
+      gap: 10px;
+    }
 
-        button {
-            background-color: #222;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.2s ease;
-            font-family: monospace, sans-serif;
-        }
+    .file-controls {
+      padding: 10px 0;
+    }
 
-        button:hover {
-            background-color: #333;
-        }
+    button,
+    select {
+      font-family: inherit;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      outline: none;
+      background-color: var(--modal-background);
+      color: var(--text-color);
+      border-radius: 7px;
+      transition: background 0.2s ease;
+      cursor: pointer;
+    }
 
-        @media (max-width: 600px) {
-            .container {
-                padding: 15px;
-            }
-        }
-    </style>
+    button:hover,
+    select:hover {
+      background-color: var(--input-background);
+    }
+
+    .modal {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-content {
+      background: var(--modal-background);
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+      outline: none;
+      font-family: inherit;
+      color: var(--text-color);
+    }
+
+    .modal-content input {
+      font-family: inherit;
+      width: 94%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: none;
+      outline: none;
+      border-radius: 5px;
+      background-color: var(--input-background);
+      color: var(--text-color);
+    }
+
+    .modal-content button {
+      margin: 0 5px;
+      font-family: inherit;
+    }
+
+    #styleSettingsModal .modal-content {
+      padding: 30px;
+    }
+
+    #styleSettingsModal label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    #styleSettingsModal input[type="color"],
+    #styleSettingsModal select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+      background-color: var(--input-background);
+      color: var(--text-color);
+      border: none;
+      outline: none;
+      font-family: inherit;
+    }
+
+    #styleSettingsModal .slider-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    #styleSettingsModal input[type="range"] {
+      width: 80%;
+      cursor: pointer;
+    }
+
+    #styleSettingsModal button {
+      margin-top: 20px;
+    }
+
+    h1 {
+      margin-bottom: 5px;
+    }
+
+    /* Rainbow Outline Animation */
+    @keyframes rainbowOutline {
+      0% { outline-color: #ff0000; } /* Red */
+      14% { outline-color: #ff7f00; } /* Orange */
+      28% { outline-color: #ffff00; } /* Yellow */
+      42% { outline-color: #00ff00; } /* Green */
+      57% { outline-color: #0000ff; } /* Blue */
+      71% { outline-color: #4b0082; } /* Indigo */
+      85% { outline-color: #9400d3; } /* Violet */
+      100% { outline-color: #ff0000; } /* Back to Red */
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="title">text editor update log</div>
-        <div class="scroll-box">
-            <p>??.??.?? - v1 - auto text saving, new file, upload file, delete file, rename file</p>
-            <p>27.12.24 - v2 - revamped dialog (defualt browser to custom)</p>
-            <p>03.01.25 - v3 - ease in/out animation for modals</p>
-            <p>04.01.25 - v4 - lock text file with blur</p>
-            <p>04.01.25 - v4.1 - individual file locking</p>
-            <p>28.02.25 - v5 - metadata [file name?, created?, last modified?, file size?, letters?, words?</p>
-            <p>09.03.25 - v6 - customisable outlines, adjustable colour and thickness, change fonts</p>
-            <p>09.03.25 - v6.1 - user set outlines & fonts, etc automatically restored when loading page</p>
-        </div>
-    </div>
+  <h1>📝 text editor v6.1</h1>
 
-    <!-- Button container placed underneath the .container -->
-    <div class="button-container">
-        <button id="updates" onclick="location.href='index';">↩️ back</button>
+  <!-- File selector + rename -->
+  <div class="file-controls">
+    <select id="fileSelector">
+      <option value="" disabled selected>select file</option>
+    </select>
+    <button id="renameFile">✏️</button>
+    <button id="themeToggle">☀️</button> <!-- New theme toggle button -->
+  </div>
+
+  <!-- Main editor -->
+  <textarea id="editor" placeholder="✍🏻 start typing..."></textarea>
+
+  <!-- Buttons row -->
+  <div class="controls">
+    <button id="download">💾</button>
+    <button id="upload">📤</button>
+    <button id="newFile">➕</button>
+    <button id="deleteFile">🗑️</button>
+    <button id="updates" onclick="location.href='updates';">ℹ️</button>
+    <button id="fileMetadata">📊</button>
+    <button id="styleSettings">🎨</button>
+  </div>
+
+  <!-- Custom modal (renaming, confirmations, etc.) -->
+  <div id="customModal" class="modal">
+    <div class="modal-content">
+      <p id="modalMessage"></p>
+      <input id="modalInput" type="text" style="display: none;" />
+      <div>
+        <button id="modalConfirm">✅ confirm</button>
+        <button id="modalCancel">❌ cancel</button>
+      </div>
     </div>
+  </div>
+
+  <!-- Metadata Modal -->
+  <div id="metadataModal" class="modal">
+    <div class="modal-content">
+      <h2>📊 file metadata</h2>
+      <p id="fileName"></p>
+      <p id="fileCreated"></p>
+      <p id="fileLastModified"></p>
+      <p id="fileSize"></p>
+      <p id="fileLetters"></p>
+      <p id="fileWords"></p>
+      <button id="closeMetadata">❌ close</button>
+    </div>
+  </div>
+
+  <!-- Style Settings Modal -->
+  <div id="styleSettingsModal" class="modal">
+    <div class="modal-content">
+      <h2>🎨 style settings</h2>
+      <label for="outlineColor">outline color:</label>
+      <input type="color" id="outlineColor" value="#000000">
+      <label for="outlineThickness">outline thickness:</label>
+      <div class="slider-container">
+        <input type="range" id="outlineThickness" min="0" max="4" step="1" value="0">
+      </div>
+      <label for="fontSelector">font:</label>
+      <select id="fontSelector">
+        <option value="lexend">lexend</option>
+        <option value="Playfair Display">playfair display</option>
+        <option value="Rubik">rubik</option>
+        <option value="Syne">syne</option>
+        <option value="Nunito">nunito</option>
+        <option value="Lora">lora</option>
+        <option value="Heavitas">heavitas</option>
+        <option value="Ubuntu">ubuntu</option>
+      </select>
+      <label for="presets">presets:</label>
+      <select id="presets">
+        <option value="default">default</option>
+        <option value="sakura">sakura</option>
+        <option value="purpleHaze">purple haze</option>
+        <option value="azure">azure</option>
+        <option value="celadon">celadon</option>
+        <option value="carmine">carmine</option>
+        <option value="aurum">aurum</option>
+        <option value="sunset">sunset</option>
+        <option value="rainbow">rainbow</option> <!-- New option -->
+      </select>
+      <button id="applyStyle">✅ apply</button>
+      <button id="closeStyleSettings">❌ close</button>
+    </div>
+  </div>
+
+  <script>
+    /* ---------------------------
+       Main IndexedDB + Editor JS
+    ----------------------------*/
+    const editor = document.getElementById('editor');
+    const downloadButton = document.getElementById('download');
+    const uploadButton = document.getElementById('upload');
+    const newFileButton = document.getElementById('newFile');
+    const deleteFileButton = document.getElementById('deleteFile');
+    const renameFileButton = document.getElementById('renameFile');
+    const fileSelector = document.getElementById('fileSelector');
+    const customModal = document.getElementById('customModal');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalInput = document.getElementById('modalInput');
+    const modalConfirm = document.getElementById('modalConfirm');
+    const modalCancel = document.getElementById('modalCancel');
+    const styleSettingsButton = document.getElementById('styleSettings');
+    const styleSettingsModal = document.getElementById('styleSettingsModal');
+    const outlineColor = document.getElementById('outlineColor');
+    const outlineThickness = document.getElementById('outlineThickness');
+    const fontSelector = document.getElementById('fontSelector');
+    const presets = document.getElementById('presets');
+    const applyStyleButton = document.getElementById('applyStyle');
+    const closeStyleSettingsButton = document.getElementById('closeStyleSettings');
+    const themeToggle = document.getElementById('themeToggle');
+
+    let db;
+    let currentFile = null;
+    let modalCallback = null;
+
+    // Theme Toggle Logic
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      document.body.classList.add(savedTheme);
+      themeToggle.textContent = savedTheme === 'light-mode' ? '🌙' : '🌞';
+    }
+
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      const isLightMode = document.body.classList.contains('light-mode');
+      themeToggle.textContent = isLightMode ? '🌙' : '🌞';
+      localStorage.setItem('theme', isLightMode ? 'light-mode' : 'dark-mode');
+    });
+
+    function openModal(message, isInput = false, callback) {
+      modalMessage.textContent = message;
+      modalInput.style.display = isInput ? 'block' : 'none';
+      modalInput.value = '';
+      customModal.classList.add('active');
+      modalCallback = callback;
+    }
+
+    function closeModal() {
+      customModal.classList.remove('active');
+      modalCallback = null;
+    }
+
+    modalConfirm.addEventListener('click', () => {
+      if (modalCallback) {
+        const inputValue =
+          modalInput.style.display === 'block'
+            ? modalInput.value.trim()
+            : true;
+        modalCallback(inputValue);
+      }
+      closeModal();
+    });
+
+    modalCancel.addEventListener('click', closeModal);
+
+    function openDatabase() {
+      const request = indexedDB.open('TextEditorDB', 2); // Increment the version number
+
+      request.onupgradeneeded = (event) => {
+        db = event.target.result;
+        if (!db.objectStoreNames.contains('files')) {
+          db.createObjectStore('files', { keyPath: 'name' });
+        }
+        if (!db.objectStoreNames.contains('styleSettings')) {
+          db.createObjectStore('styleSettings', { keyPath: 'id' });
+        }
+      };
+
+      request.onsuccess = (event) => {
+        db = event.target.result;
+        loadFileList();
+        loadStyleSettings(); // Load style settings when the database is successfully opened
+      };
+
+      request.onerror = (event) => {
+        console.error('⚠️ database error:', event.target.error);
+      };
+    }
+
+    function saveStyleSettings(settings) {
+      const transaction = db.transaction('styleSettings', 'readwrite');
+      const store = transaction.objectStore('styleSettings');
+      store.put({ id: 'currentStyle', ...settings });
+    }
+
+    function loadStyleSettings() {
+      const transaction = db.transaction('styleSettings', 'readonly');
+      const store = transaction.objectStore('styleSettings');
+      const request = store.get('currentStyle');
+
+      request.onsuccess = () => {
+        const settings = request.result;
+        if (settings) {
+          applyStyleSettings(settings);
+          if (settings.preset === 'rainbow') {
+            presets.value = 'rainbow'; // Ensure the dropdown reflects the correct preset
+          }
+        }
+      };
+    }
+
+    function applyStyleSettings(settings) {
+      const { color, thickness, font } = settings;
+
+      // Apply font to the entire page
+      document.body.style.fontFamily = font;
+
+      // Apply font to buttons, textarea, and select elements
+      document.querySelectorAll('button, textarea, select, input, .modal-content').forEach(element => {
+        element.style.fontFamily = font;
+      });
+
+      // Apply outline styles to buttons, textarea, and select elements
+      document.querySelectorAll('button, textarea, select').forEach(element => {
+        if (presets.value === 'rainbow') {
+          element.style.outlineWidth = `${thickness}px`;
+          element.style.outlineStyle = 'solid';
+          element.style.animation = 'rainbowOutline 5s linear infinite';
+        } else {
+          element.style.outlineColor = color;
+          element.style.outlineWidth = `${thickness}px`;
+          element.style.outlineStyle = thickness > 0 ? 'solid' : 'none';
+          element.style.animation = 'none'; // Remove rainbow animation
+        }
+      });
+
+      // Apply outline styles to modal backgrounds
+      document.querySelectorAll('.modal-content').forEach(modal => {
+        if (presets.value === 'rainbow') {
+          modal.style.outlineWidth = `${thickness}px`;
+          modal.style.outlineStyle = 'solid';
+          modal.style.animation = 'rainbowOutline 5s linear infinite';
+        } else {
+          modal.style.outlineColor = color;
+          modal.style.outlineWidth = `${thickness}px`;
+          modal.style.outlineStyle = thickness > 0 ? 'solid' : 'none';
+          modal.style.animation = 'none'; // Remove rainbow animation
+        }
+      });
+
+      // Update the style settings modal inputs
+      outlineColor.value = color;
+      outlineThickness.value = thickness;
+      fontSelector.value = font;
+    }
+
+    /**
+     * Save or update a file in IndexedDB.
+     * - Preserves creation date if already present
+     * - Always updates lastModified
+     */
+    function saveFileToDB(fileName, content) {
+      const transaction = db.transaction('files', 'readwrite');
+      const store = transaction.objectStore('files');
+      const getRequest = store.get(fileName);
+
+      getRequest.onsuccess = () => {
+        // preserve creation timestamp if it exists
+        let created;
+        if (getRequest.result && getRequest.result.created) {
+          created = getRequest.result.created;
+        } else {
+          created = new Date().toISOString();
+        }
+
+        // always update lastModified
+        const lastModified = new Date().toISOString();
+
+        store.put({ name: fileName, content, created, lastModified });
+      };
+    }
+
+    function loadFileList() {
+      const transaction = db.transaction('files', 'readonly');
+      const store = transaction.objectStore('files');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        const files = request.result;
+        fileSelector.innerHTML =
+          '<option value="" disabled selected>select file</option>';
+        files.forEach((file) => {
+          const option = document.createElement('option');
+          option.value = file.name;
+          option.textContent = file.name;
+          fileSelector.appendChild(option);
+        });
+      };
+    }
+
+    newFileButton.addEventListener('click', () => {
+      openModal('↳ enter new file name:', true, (fileName) => {
+        if (!fileName) return;
+
+        const transaction = db.transaction('files', 'readonly');
+        const store = transaction.objectStore('files');
+        const request = store.get(fileName);
+
+        request.onsuccess = () => {
+          if (request.result) {
+            openModal(
+              '⚠️ a file with this name already exists. please choose a different name'
+            );
+            return;
+          }
+          // Save new file (with creation timestamp)
+          saveFileToDB(fileName, '');
+          currentFile = fileName;
+          editor.value = '';
+          loadFileList();
+        };
+      });
+    });
+
+    deleteFileButton.addEventListener('click', () => {
+      if (!currentFile) {
+        openModal('⚠️ no file is currently selected.');
+        return;
+      }
+      openModal(`⚠️ are you sure you want to delete '${currentFile}'?`, false, (confirm) => {
+        if (confirm) {
+          const transaction = db.transaction('files', 'readwrite');
+          const store = transaction.objectStore('files');
+          store.delete(currentFile);
+          currentFile = null;
+          editor.value = '';
+          loadFileList();
+        }
+      });
+    });
+
+    // Preserve creation timestamp on rename
+    renameFileButton.addEventListener('click', () => {
+      if (!currentFile) {
+        openModal('⚠️ no file is currently selected');
+        return;
+      }
+      openModal('↳ enter new name for the file:', true, (newFileName) => {
+        if (!newFileName || newFileName === currentFile) return;
+
+        const transaction = db.transaction('files', 'readwrite');
+        const store = transaction.objectStore('files');
+        // get the old file to preserve its created date
+        const oldFileRequest = store.get(currentFile);
+
+        oldFileRequest.onsuccess = () => {
+          const oldFile = oldFileRequest.result;
+          const created = oldFile ? oldFile.created : new Date().toISOString();
+          const currentContent = editor.value;
+          const lastModified = new Date().toISOString();
+
+          // check if the new name already exists
+          const getRequest = store.get(newFileName);
+          getRequest.onsuccess = () => {
+            if (getRequest.result) {
+              openModal(
+                '⚠️ a file with this name already exists. please choose a different name'
+              );
+              return;
+            }
+            // delete old file, then create the new one
+            const deleteRequest = store.delete(currentFile);
+
+            deleteRequest.onsuccess = () => {
+              store.put({
+                name: newFileName,
+                content: currentContent,
+                created,
+                lastModified
+              });
+              currentFile = newFileName;
+              loadFileList();
+            };
+          };
+        };
+      });
+    });
+
+    fileSelector.addEventListener('change', () => {
+      const selectedFile = fileSelector.value;
+      const transaction = db.transaction('files', 'readonly');
+      const store = transaction.objectStore('files');
+      const request = store.get(selectedFile);
+
+      request.onsuccess = () => {
+        const file = request.result;
+        if (file) {
+          currentFile = file.name;
+          editor.value = file.content;
+        }
+      };
+    });
+
+    editor.addEventListener('input', () => {
+      if (currentFile) {
+        saveFileToDB(currentFile, editor.value);
+      }
+    });
+
+    downloadButton.addEventListener('click', () => {
+      if (!currentFile) {
+        openModal('⚠️ no file is currently selected');
+        return;
+      }
+      const blob = new Blob([editor.value], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = currentFile;
+      link.click();
+    });
+
+    uploadButton.addEventListener('click', () => {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.txt';
+
+      fileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const content = e.target.result;
+            openModal('↳ enter a name for the uploaded file:', true, (fileName) => {
+              if (!fileName) return;
+              saveFileToDB(fileName, content);
+              currentFile = fileName;
+              editor.value = content;
+              loadFileList();
+            });
+          };
+          reader.readAsText(file);
+        }
+      });
+      fileInput.click();
+    });
+
+    openDatabase();
+
+    /* -------------------------
+       Style Settings Modal
+    --------------------------*/
+    styleSettingsButton.addEventListener('click', () => {
+      styleSettingsModal.classList.add('active');
+    });
+
+    closeStyleSettingsButton.addEventListener('click', () => {
+      styleSettingsModal.classList.remove('active');
+    });
+
+    applyStyleButton.addEventListener('click', () => {
+      const color = outlineColor.value;
+      const thickness = outlineThickness.value;
+      const font = fontSelector.value;
+
+      const settings = { color, thickness, font, preset: presets.value };
+      saveStyleSettings(settings);
+      applyStyleSettings(settings);
+
+      styleSettingsModal.classList.remove('active');
+    });
+
+    presets.addEventListener('change', (event) => {
+      const preset = event.target.value;
+      if (preset === 'default') {
+        outlineColor.value = '#000000';
+        outlineThickness.value = 0;
+        fontSelector.value = 'lexend';
+        // Remove rainbow animation
+        document.querySelectorAll('button, textarea, select').forEach(element => {
+          element.style.animation = 'none';
+          element.style.outlineColor = '';
+        });
+      } else if (preset === 'sakura') {
+        outlineColor.value = '#FFB7C5';
+        outlineThickness.value = 3;
+        fontSelector.value = 'Playfair Display';
+      } else if (preset === 'purpleHaze') {
+        outlineColor.value = '#7D7098';
+        outlineThickness.value = 3;
+        fontSelector.value = 'Rubik';
+      } else if (preset === 'azure') {
+        outlineColor.value = '#F0FFFF';
+        outlineThickness.value = 3;
+        fontSelector.value = 'Syne';
+      } else if (preset === 'celadon') {
+        outlineColor.value = '#AFE1AF';
+        outlineThickness.value = 3;
+        fontSelector.value = 'Nunito';
+      } else if (preset === 'carmine') {
+        outlineColor.value = '#D70040';
+        outlineThickness.value = 3;
+        fontSelector.value = 'Lora';
+      } else if (preset === 'aurum') {
+        outlineColor.value = '#FFD700';
+        outlineThickness.value = 3;
+        fontSelector.value = 'Heavitas';
+      } else if (preset === 'sunset') {
+        outlineColor.value = '#FFA500';
+        outlineThickness.value = 3;
+        fontSelector.value = 'Ubuntu';
+      } else if (preset === 'rainbow') {
+        outlineThickness.value = 3;
+        // Apply rainbow animation to buttons, textarea, and select elements
+        fontSelector.value = 'Ubuntu';
+        document.querySelectorAll('button, textarea, select').forEach(element => {
+          element.style.outlineWidth = '3px';
+          element.style.outlineStyle = 'solid';
+          element.style.animation = 'rainbowOutline 5s linear infinite';
+        });
+      }
+
+      // Automatically apply the selected preset
+      applyStyleButton.click();
+    });
+  </script>
+
+  <script>
+    /* -------------------------
+       Locking/Unlocking Feature
+    --------------------------*/
+    const lockedFiles = {}; // Store lock states for each file
+    const lockFileButton = document.createElement('button');
+    lockFileButton.id = 'lockFile';
+    lockFileButton.textContent = '🔒';
+    document.querySelector('.file-controls').appendChild(lockFileButton);
+
+    lockFileButton.addEventListener('click', () => {
+      if (!currentFile) {
+        openModal('⚠️ no file is currently selected', false);
+        return;
+      }
+
+      const fileLockState = lockedFiles[currentFile];
+
+      if (fileLockState?.isLocked) {
+        // Unlock flow
+        openModal('↳ enter password to unlock:', true, (password) => {
+          if (password === fileLockState.password) {
+            lockedFiles[currentFile] = { isLocked: false, password: null };
+            editor.style.filter = 'none';
+            editor.readOnly = false;
+            lockFileButton.textContent = '🔒';
+            openModal('✅ file unlocked successfully');
+          } else {
+            openModal('⚠️ incorrect password');
+          }
+        });
+      } else {
+        // Lock flow
+        openModal('↳ enter a password to lock the file:', true, (password) => {
+          if (!password) {
+            openModal('⚠️ Password cannot be empty.', false);
+            return;
+          }
+          lockedFiles[currentFile] = { isLocked: true, password };
+          editor.style.filter = 'blur(4px)';
+          editor.readOnly = true;
+          lockFileButton.textContent = '🔓';
+          openModal('✅ file locked successfully');
+        });
+      }
+    });
+
+    // Prevent edits if file is locked
+    editor.addEventListener('input', () => {
+      const fileLockState = lockedFiles[currentFile];
+      if (fileLockState?.isLocked) {
+        openModal('⚠️ file is locked. please unlock to edit', false);
+        editor.value = fileLockState.cachedContent || '';
+      } else if (currentFile) {
+        saveFileToDB(currentFile, editor.value);
+        if (!lockedFiles[currentFile]) {
+          lockedFiles[currentFile] = {};
+        }
+        lockedFiles[currentFile].cachedContent = editor.value;
+      }
+    });
+
+    // Switch lock states on file change
+    fileSelector.addEventListener('change', () => {
+      const selectedFile = fileSelector.value;
+      const transaction = db.transaction('files', 'readonly');
+      const store = transaction.objectStore('files');
+      const request = store.get(selectedFile);
+
+      request.onsuccess = () => {
+        const file = request.result;
+        if (file) {
+          currentFile = file.name;
+          editor.value = file.content;
+          const fileLockState = lockedFiles[currentFile];
+          if (fileLockState?.isLocked) {
+            editor.style.filter = 'blur(4px)';
+            editor.readOnly = true;
+            lockFileButton.textContent = '🔓';
+          } else {
+            editor.style.filter = 'none';
+            editor.readOnly = false;
+            lockFileButton.textContent = '🔒';
+          }
+        }
+      };
+    });
+  </script>
+
+  <script>
+    /* ------------------------
+       Metadata Modal Feature
+    -------------------------*/
+    const fileMetadataButton = document.getElementById('fileMetadata');
+    const metadataModal = document.getElementById('metadataModal');
+    const fileNameEl = document.getElementById('fileName');
+    const fileCreated = document.getElementById('fileCreated');
+    const fileLastModified = document.getElementById('fileLastModified');
+    const fileSizeEl = document.getElementById('fileSize');
+    const fileLetters = document.getElementById('fileLetters');
+    const fileWords = document.getElementById('fileWords');
+    const closeMetadataButton = document.getElementById('closeMetadata');
+
+    fileMetadataButton.addEventListener('click', () => {
+      if (!currentFile) {
+        openModal('⚠️ no file is currently selected');
+        return;
+      }
+
+      const transaction = db.transaction('files', 'readonly');
+      const store = transaction.objectStore('files');
+      const request = store.get(currentFile);
+
+      request.onsuccess = () => {
+        const file = request.result;
+        if (file) {
+          // File name
+          fileNameEl.textContent = `file name: ${file.name}`;
+
+          // Creation date
+          fileCreated.textContent = `created: ${
+            file.created
+              ? new Date(file.created).toLocaleString()
+              : 'not available'
+          }`;
+
+          // Last modified date
+          fileLastModified.textContent = `last modified: ${
+            file.lastModified
+              ? new Date(file.lastModified).toLocaleString()
+              : 'not available'
+          }`;
+
+          // File size in bytes (via Blob)
+          const sizeInBytes = new Blob([file.content], {
+            type: 'text/plain',
+          }).size;
+          fileSizeEl.textContent = `file size: ${sizeInBytes} bytes`;
+
+          // Letters and words
+          fileLetters.textContent = `letters: ${file.content.length}`;
+          fileWords.textContent = `words: ${
+            file.content.trim().split(/\s+/).filter(Boolean).length
+          }`;
+
+          metadataModal.classList.add('active');
+        }
+      };
+    });
+
+    closeMetadataButton.addEventListener('click', () => {
+      metadataModal.classList.remove('active');
+    });
+  </script>
 </body>
 </html>

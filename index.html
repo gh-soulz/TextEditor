@@ -27,8 +27,8 @@
       src: url('fonts/Lora.ttf') format('truetype');
     }
     @font-face {
-      font-family: 'Lexend';
-      src: url('fonts/Lexend.ttf') format('truetype');
+      font-family: 'Heavitas';
+      src: url(fonts/Heavitas.ttf) format('truetype');
     }
 
     :root {
@@ -271,12 +271,13 @@
       </div>
       <label for="fontSelector">font:</label>
       <select id="fontSelector">
-        <option value="Lexend">lexend</option>
+        <option value="lexend">lexend</option>
         <option value="Playfair Display">playfair display</option>
         <option value="Rubik">rubik</option>
         <option value="Syne">syne</option>
         <option value="Nunito">nunito</option>
         <option value="Lora">lora</option>
+        <option value="Heavitas">heavitas</option>
       </select>
       <label for="presets">presets:</label>
       <select id="presets">
@@ -286,6 +287,7 @@
         <option value="azure">azure</option>
         <option value="celadon">celadon</option>
         <option value="carmine">carmine</option>
+        <option value="aurum">aurum</option>
       </select>
       <button id="applyStyle">✅ apply</button>
       <button id="closeStyleSettings">❌ close</button>
@@ -620,7 +622,7 @@
       if (preset === 'default') {
         outlineColor.value = '#000000';
         outlineThickness.value = 0; // No outline for default
-        fontSelector.value = 'Lexend'; // Lexend font for default
+        fontSelector.value = 'lexend'; // Lexend font for default
       } else if (preset === 'sakura') {
         outlineColor.value = '#FFB7C5'; // Sakura color
         outlineThickness.value = 3;
@@ -641,6 +643,10 @@
         outlineColor.value = '#D70040'; // Carmine color
         outlineThickness.value = 3;
         fontSelector.value = 'Lora';
+      } else if (preset === 'aurum') {
+        outlineColor.value = '#FFD700'; // Gold color
+        outlineThickness.value = 3;
+        fontSelector.value = 'Heavitas';
       }
 
       // Automatically apply the selected preset

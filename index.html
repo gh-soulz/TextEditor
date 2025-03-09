@@ -7,6 +7,10 @@
   <link rel="icon" type="image/x-icon" href="icon.png" />
   <style>
     @font-face {
+      font-family: 'Lexend';
+      src: url('fonts/Lexend.ttf') format('truetype');
+    }
+    @font-face {
       font-family: 'Playfair Display';
       src: url('fonts/PlayfairDisplay.ttf') format('truetype');
     }
@@ -28,12 +32,13 @@
     }
     @font-face {
       font-family: 'Heavitas';
-      src: url('fonts/Heavitas.ttf') format('truetype');
+      src: url(fonts/Heavitas.ttf) format('truetype');
     }
     @font-face {
-      font-family: 'Lexend';
-      src: url('fonts/Lexend.ttf') format('truetype');
+      font-family: 'Ubuntu';
+      src: url(fonts/Ubuntu.ttf) format('truetype');
     }
+
     :root {
       --background-color: #111; /* Dark mode background */
       --text-color: white; /* Dark mode text color */
@@ -281,6 +286,7 @@
         <option value="Nunito">nunito</option>
         <option value="Lora">lora</option>
         <option value="Heavitas">heavitas</option>
+        <option value="Ubuntu">ubuntu</option>
       </select>
       <label for="presets">presets:</label>
       <select id="presets">
@@ -291,6 +297,7 @@
         <option value="celadon">celadon</option>
         <option value="carmine">carmine</option>
         <option value="aurum">aurum</option>
+        <option value="sunset">sunset</option>
       </select>
       <button id="applyStyle">✅ apply</button>
       <button id="closeStyleSettings">❌ close</button>
@@ -625,7 +632,7 @@
       if (preset === 'default') {
         outlineColor.value = '#000000';
         outlineThickness.value = 0; // No outline for default
-        fontSelector.value = 'Lexend'; // Lexend font for default
+        fontSelector.value = 'lexend'; // Lexend font for default
       } else if (preset === 'sakura') {
         outlineColor.value = '#FFB7C5'; // Sakura color
         outlineThickness.value = 3;
@@ -650,6 +657,10 @@
         outlineColor.value = '#FFD700'; // Gold color
         outlineThickness.value = 3;
         fontSelector.value = 'Heavitas';
+      } else if (preset === 'sunset') {
+        outlineColor.value = '#FFA500'; // Orange color
+        outlineThickness.value = 3;
+        fontSelector.value = 'Ubuntu';
       }
 
       // Automatically apply the selected preset

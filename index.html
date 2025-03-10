@@ -217,6 +217,18 @@
     h1 {
       margin-bottom: 5px;
     }
+
+    /* Rainbow Outline Animation */
+    @keyframes rainbowOutline {
+      0% { outline-color: #ff0000; } /* Red */
+      14% { outline-color: #ff7f00; } /* Orange */
+      28% { outline-color: #ffff00; } /* Yellow */
+      42% { outline-color: #00ff00; } /* Green */
+      57% { outline-color: #0000ff; } /* Blue */
+      71% { outline-color: #4b0082; } /* Indigo */
+      85% { outline-color: #9400d3; } /* Violet */
+      100% { outline-color: #ff0000; } /* Back to Red */
+    }
   </style>
 </head>
 <body>
@@ -304,6 +316,7 @@
         <option value="aurum">aurum</option>
         <option value="sunset">sunset</option>
         <option value="white">white</option>
+        <option value="rainbow">rainbow</option> <!-- New option -->
       </select>
       <button id="applyStyle">✅ apply</button>
       <button id="closeStyleSettings">❌ close</button>
@@ -381,23 +394,94 @@
     modalCancel.addEventListener('click', closeModal);
 
     function openDatabase() {
-      const request = indexedDB.open('TextEditorDB', 1);
+      const request = indexedDB.open('TextEditorDB', 2); // Increment the version number
 
       request.onupgradeneeded = (event) => {
         db = event.target.result;
         if (!db.objectStoreNames.contains('files')) {
           db.createObjectStore('files', { keyPath: 'name' });
         }
+        if (!db.objectStoreNames.contains('styleSettings')) {
+          db.createObjectStore('styleSettings', { keyPath: 'id' });
+        }
       };
 
       request.onsuccess = (event) => {
         db = event.target.result;
         loadFileList();
+        loadStyleSettings(); // Load style settings when the database is successfully opened
       };
 
       request.onerror = (event) => {
         console.error('⚠️ database error:', event.target.error);
       };
+    }
+
+    function saveStyleSettings(settings) {
+      const transaction = db.transaction('styleSettings', 'readwrite');
+      const store = transaction.objectStore('styleSettings');
+      store.put({ id: 'currentStyle', ...settings });
+    }
+
+    function loadStyleSettings() {
+      const transaction = db.transaction('styleSettings', 'readonly');
+      const store = transaction.objectStore('styleSettings');
+      const request = store.get('currentStyle');
+
+      request.onsuccess = () => {
+        const settings = request.result;
+        if (settings) {
+          applyStyleSettings(settings);
+          if (settings.preset === 'rainbow') {
+            presets.value = 'rainbow'; // Ensure the dropdown reflects the correct preset
+          }
+        }
+      };
+    }
+
+    function applyStyleSettings(settings) {
+      const { color, thickness, font } = settings;
+
+      // Apply font to the entire page
+      document.body.style.fontFamily = font;
+
+      // Apply font to buttons, textarea, and select elements
+      document.querySelectorAll('button, textarea, select, input, .modal-content').forEach(element => {
+        element.style.fontFamily = font;
+      });
+
+      // Apply outline styles to buttons, textarea, and select elements
+      document.querySelectorAll('button, textarea, select').forEach(element => {
+        if (presets.value === 'rainbow') {
+          element.style.outlineWidth = `${thickness}px`;
+          element.style.outlineStyle = 'solid';
+          element.style.animation = 'rainbowOutline 5s linear infinite';
+        } else {
+          element.style.outlineColor = color;
+          element.style.outlineWidth = `${thickness}px`;
+          element.style.outlineStyle = thickness > 0 ? 'solid' : 'none';
+          element.style.animation = 'none'; // Remove rainbow animation
+        }
+      });
+
+      // Apply outline styles to modal backgrounds
+      document.querySelectorAll('.modal-content').forEach(modal => {
+        if (presets.value === 'rainbow') {
+          modal.style.outlineWidth = `${thickness}px`;
+          modal.style.outlineStyle = 'solid';
+          modal.style.animation = 'rainbowOutline 5s linear infinite';
+        } else {
+          modal.style.outlineColor = color;
+          modal.style.outlineWidth = `${thickness}px`;
+          modal.style.outlineStyle = thickness > 0 ? 'solid' : 'none';
+          modal.style.animation = 'none'; // Remove rainbow animation
+        }
+      });
+
+      // Update the style settings modal inputs
+      outlineColor.value = color;
+      outlineThickness.value = thickness;
+      fontSelector.value = font;
     }
 
     /**
@@ -608,27 +692,9 @@
       const thickness = outlineThickness.value;
       const font = fontSelector.value;
 
-      // Apply font to the entire page
-      document.body.style.fontFamily = font;
-
-      // Apply font to buttons, textarea, and select elements
-      document.querySelectorAll('button, textarea, select, input, .modal-content').forEach(element => {
-        element.style.fontFamily = font;
-      });
-
-      // Apply outline styles to buttons, textarea, and select elements
-      document.querySelectorAll('button, textarea, select').forEach(element => {
-        element.style.outlineColor = color;
-        element.style.outlineWidth = `${thickness}px`;
-        element.style.outlineStyle = thickness > 0 ? 'solid' : 'none'; // Hide outline if thickness is 0
-      });
-
-      // Apply outline styles to modal backgrounds
-      document.querySelectorAll('.modal-content').forEach(modal => {
-        modal.style.outlineColor = color;
-        modal.style.outlineWidth = `${thickness}px`;
-        modal.style.outlineStyle = thickness > 0 ? 'solid' : 'none';
-      });
+      const settings = { color, thickness, font, preset: presets.value };
+      saveStyleSettings(settings);
+      applyStyleSettings(settings);
 
       styleSettingsModal.classList.remove('active');
     });
@@ -637,40 +703,53 @@
       const preset = event.target.value;
       if (preset === 'default') {
         outlineColor.value = '#000000';
-        outlineThickness.value = 0; // No outline for default
-        fontSelector.value = 'lexend'; // Lexend font for default
+        outlineThickness.value = 0;
+        fontSelector.value = 'lexend';
+        // Remove rainbow animation
+        document.querySelectorAll('button, textarea, select').forEach(element => {
+          element.style.animation = 'none';
+          element.style.outlineColor = '';
+        });
       } else if (preset === 'sakura') {
-        outlineColor.value = '#FFB7C5'; // Sakura color
+        outlineColor.value = '#FFB7C5';
         outlineThickness.value = 3;
         fontSelector.value = 'Playfair Display';
       } else if (preset === 'purpleHaze') {
-        outlineColor.value = '#7D7098'; // Purple Haze color
+        outlineColor.value = '#7D7098';
         outlineThickness.value = 3;
         fontSelector.value = 'Rubik';
       } else if (preset === 'azure') {
-        outlineColor.value = '#F0FFFF'; // Azure color
+        outlineColor.value = '#F0FFFF';
         outlineThickness.value = 3;
         fontSelector.value = 'Syne';
       } else if (preset === 'celadon') {
-        outlineColor.value = '#AFE1AF'; // Celadon color
+        outlineColor.value = '#AFE1AF';
         outlineThickness.value = 3;
         fontSelector.value = 'Nunito';
       } else if (preset === 'carmine') {
-        outlineColor.value = '#D70040'; // Carmine color
+        outlineColor.value = '#D70040';
         outlineThickness.value = 3;
         fontSelector.value = 'Lora';
       } else if (preset === 'aurum') {
-        outlineColor.value = '#FFD700'; // Gold color
+        outlineColor.value = '#FFD700';
         outlineThickness.value = 3;
         fontSelector.value = 'Heavitas';
       } else if (preset === 'sunset') {
-        outlineColor.value = '#FFA500'; // Orange color
+        outlineColor.value = '#FFA500';
         outlineThickness.value = 3;
         fontSelector.value = 'Ubuntu';
       } else if (preset === 'white') {
-        outlineColor.value = '#FFFFFF'; // White color
+        outlineColor.value = '#FFFFFF';
         outlineThickness.value = 3;
         fontSelector.value = 'Georgia';
+      } else if (preset === 'rainbow') {
+        outlineThickness.value = 3;
+        // Apply rainbow animation to buttons, textarea, and select elements
+        document.querySelectorAll('button, textarea, select').forEach(element => {
+          element.style.outlineWidth = '3px';
+          element.style.outlineStyle = 'solid';
+          element.style.animation = 'rainbowOutline 5s linear infinite';
+        });
       }
 
       // Automatically apply the selected preset

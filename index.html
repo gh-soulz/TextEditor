@@ -38,6 +38,10 @@
       font-family: 'Ubuntu';
       src: url(fonts/Ubuntu.ttf) format('truetype');
     }
+    @font-face {
+      font-family: 'Georgia';
+      src: url(fonts/Georgia.ttf) format('truetype');
+    }
 
     :root {
       --background-color: #111; /* Dark mode background */
@@ -287,6 +291,7 @@
         <option value="Lora">lora</option>
         <option value="Heavitas">heavitas</option>
         <option value="Ubuntu">ubuntu</option>
+        <option value="Georgia">georgia</option>
       </select>
       <label for="presets">presets:</label>
       <select id="presets">
@@ -298,6 +303,7 @@
         <option value="carmine">carmine</option>
         <option value="aurum">aurum</option>
         <option value="sunset">sunset</option>
+        <option value="white">white</option>
       </select>
       <button id="applyStyle">✅ apply</button>
       <button id="closeStyleSettings">❌ close</button>
@@ -375,77 +381,23 @@
     modalCancel.addEventListener('click', closeModal);
 
     function openDatabase() {
-      const request = indexedDB.open('TextEditorDB', 2); // Increment the version number
+      const request = indexedDB.open('TextEditorDB', 1);
 
       request.onupgradeneeded = (event) => {
         db = event.target.result;
         if (!db.objectStoreNames.contains('files')) {
           db.createObjectStore('files', { keyPath: 'name' });
         }
-        if (!db.objectStoreNames.contains('styleSettings')) {
-          db.createObjectStore('styleSettings', { keyPath: 'id' });
-        }
       };
 
       request.onsuccess = (event) => {
         db = event.target.result;
         loadFileList();
-        loadStyleSettings(); // Load style settings when the database is successfully opened
       };
 
       request.onerror = (event) => {
         console.error('⚠️ database error:', event.target.error);
       };
-    }
-
-    function saveStyleSettings(settings) {
-      const transaction = db.transaction('styleSettings', 'readwrite');
-      const store = transaction.objectStore('styleSettings');
-      store.put({ id: 'currentStyle', ...settings });
-    }
-
-    function loadStyleSettings() {
-      const transaction = db.transaction('styleSettings', 'readonly');
-      const store = transaction.objectStore('styleSettings');
-      const request = store.get('currentStyle');
-
-      request.onsuccess = () => {
-        const settings = request.result;
-        if (settings) {
-          applyStyleSettings(settings);
-        }
-      };
-    }
-
-    function applyStyleSettings(settings) {
-      const { color, thickness, font } = settings;
-
-      // Apply font to the entire page
-      document.body.style.fontFamily = font;
-
-      // Apply font to buttons, textarea, and select elements
-      document.querySelectorAll('button, textarea, select, input, .modal-content').forEach(element => {
-        element.style.fontFamily = font;
-      });
-
-      // Apply outline styles to buttons, textarea, and select elements
-      document.querySelectorAll('button, textarea, select').forEach(element => {
-        element.style.outlineColor = color;
-        element.style.outlineWidth = `${thickness}px`;
-        element.style.outlineStyle = thickness > 0 ? 'solid' : 'none'; // Hide outline if thickness is 0
-      });
-
-      // Apply outline styles to modal backgrounds
-      document.querySelectorAll('.modal-content').forEach(modal => {
-        modal.style.outlineColor = color;
-        modal.style.outlineWidth = `${thickness}px`;
-        modal.style.outlineStyle = thickness > 0 ? 'solid' : 'none';
-      });
-
-      // Update the style settings modal inputs
-      outlineColor.value = color;
-      outlineThickness.value = thickness;
-      fontSelector.value = font;
     }
 
     /**
@@ -656,9 +608,27 @@
       const thickness = outlineThickness.value;
       const font = fontSelector.value;
 
-      const settings = { color, thickness, font };
-      saveStyleSettings(settings);
-      applyStyleSettings(settings);
+      // Apply font to the entire page
+      document.body.style.fontFamily = font;
+
+      // Apply font to buttons, textarea, and select elements
+      document.querySelectorAll('button, textarea, select, input, .modal-content').forEach(element => {
+        element.style.fontFamily = font;
+      });
+
+      // Apply outline styles to buttons, textarea, and select elements
+      document.querySelectorAll('button, textarea, select').forEach(element => {
+        element.style.outlineColor = color;
+        element.style.outlineWidth = `${thickness}px`;
+        element.style.outlineStyle = thickness > 0 ? 'solid' : 'none'; // Hide outline if thickness is 0
+      });
+
+      // Apply outline styles to modal backgrounds
+      document.querySelectorAll('.modal-content').forEach(modal => {
+        modal.style.outlineColor = color;
+        modal.style.outlineWidth = `${thickness}px`;
+        modal.style.outlineStyle = thickness > 0 ? 'solid' : 'none';
+      });
 
       styleSettingsModal.classList.remove('active');
     });
@@ -697,6 +667,10 @@
         outlineColor.value = '#FFA500'; // Orange color
         outlineThickness.value = 3;
         fontSelector.value = 'Ubuntu';
+      } else if (preset === 'white') {
+        outlineColor.value = '#FFFFFF'; // White color
+        outlineThickness.value = 3;
+        fontSelector.value = 'Georgia';
       }
 
       // Automatically apply the selected preset
